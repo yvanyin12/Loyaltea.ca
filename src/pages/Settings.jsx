@@ -12,6 +12,7 @@ import {
 
 export default function Settings() {
   const [apiKey, setApiKeyState] = useState(getApiKey());
+  const [proxyUrl, setProxyUrlState] = useState(getProxyUrl());
   const [showKey, setShowKey] = useState(false);
   const [configs, setConfigs] = useState([]);
   const [selectedConfig, setSelectedConfigState] = useState(getSelectedConfig());
