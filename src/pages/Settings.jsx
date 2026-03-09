@@ -22,6 +22,7 @@ export default function Settings() {
 
   const handleSaveKey = () => {
     setApiKey(apiKey.trim());
+    setProxyUrl(proxyUrl.trim());
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
