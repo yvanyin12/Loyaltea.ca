@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { CheckCircle2, AlertCircle, Loader2, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import {
   getApiKey, setApiKey,
+  getProxyUrl, setProxyUrl,
   getSelectedConfig, setSelectedConfig,
   fetchConfigurations,
 } from '../components/api/passcreatorApi';
