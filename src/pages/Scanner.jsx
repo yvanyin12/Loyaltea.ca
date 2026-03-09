@@ -7,8 +7,10 @@ import { AlertCircle, Camera, Keyboard, Loader2, Settings } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import QRScanner from '../components/scanner/QRScanner';
 import ScanResult from '../components/scanner/ScanResult';
+import DebugPanel from '../components/scanner/DebugPanel';
 import {
   getApiKey,
+  getProxyUrl,
   getSelectedConfig,
   checkPassByBarcode,
   createAppScan,
@@ -19,14 +21,29 @@ export default function Scanner() {
   const [manualValue, setManualValue] = useState('');
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState(null);
-  const [scanKey, setScanKey] = useState(0); // remount QRScanner on reset
+  const [scanKey, setScanKey] = useState(0);
+  const [debugLogs, setDebugLogs] = useState([]);
 
   const apiKey = getApiKey();
+  const proxyUrl = getProxyUrl();
   const config = getSelectedConfig();
+
+  const log = (level, message) => {
+    console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](
+      `[Scanner] ${message}`
+    );
+    setDebugLogs((prev) => [...prev, { level, message }]);
+  };
 
   const handleScan = async (barcodeValue) => {
     if (processing) return;
     setProcessing(true);
+    setDebugLogs([]);
+
+    log('info', `Barcode captured: "${barcodeValue}"`);
+    log('info', `Proxy URL: ${proxyUrl || '(not set)'}`);
+    log('info', `API key present: ${apiKey ? 'yes' : 'NO — missing'}`);
+    log('info', `App config: ${config?.name || '(none selected)'}`);
 
     let scanResult = 'error';
     let passData = null;
@@ -34,35 +51,63 @@ export default function Scanner() {
     let appScanSubmitted = false;
 
     try {
-      const checkData = await checkPassByBarcode(barcodeValue, apiKey);
+      // ── STEP 1: Validate pass via proxy ─────────────────────────────
+      // Endpoint: POST {PROXY_URL}/validate
+      // Payload:  { barcodeValue: string, apiKey: string }
+      // Expected: { scanResult, passIdentifier, voided, error }
+      const validateUrl = `${proxyUrl}/validate`;
+      log('info', `Calling validatePass → POST ${validateUrl}`);
+      log('info', `Payload: { barcodeValue: "${barcodeValue}", apiKey: "${apiKey ? '***' : 'MISSING'}" }`);
 
-      if (checkData.error && checkData.error !== '') {
+      const checkData = await checkPassByBarcode(barcodeValue, apiKey);
+      log('ok', `Validate response received`);
+      log('info', `Raw response: ${JSON.stringify(checkData)}`);
+
+      // The proxy should return the normalised shape from passcreatorApi.js
+      // If the proxy forwards Passcreator's raw response, handle both shapes:
+      const responseError = checkData.error;
+      const isVoided = checkData.voided;
+
+      if (responseError && responseError !== '') {
         scanResult = 'unknown';
-      } else if (checkData.voided) {
+        log('warn', `Pass unknown — error field: "${responseError}"`);
+      } else if (isVoided) {
         scanResult = 'already_voided';
         passData = checkData;
+        log('warn', `Pass already voided`);
       } else {
         scanResult = 'valid';
         passData = checkData;
+        log('ok', `Pass is VALID`);
       }
 
+      // ── STEP 2: Track scan via proxy ─────────────────────────────────
+      // Endpoint: POST {PROXY_URL}/track
+      // Payload:  { barcodeValue, appConfigurationId, apiKey }
       if (config?.configurationId) {
+        const trackUrl = `${proxyUrl}/track`;
+        log('info', `Sending appscan → POST ${trackUrl}`);
+        log('info', `Payload: { barcodeValue: "${barcodeValue}", appConfigurationId: "${config.configurationId}" }`);
         try {
           await createAppScan(barcodeValue, config.configurationId, apiKey);
           appScanSubmitted = true;
+          log('ok', `App scan tracked successfully`);
         } catch (e) {
-          // Non-fatal: scan result still displayed
+          log('warn', `App scan tracking failed (non-fatal): ${e.message}`);
         }
+      } else {
+        log('warn', `No app config selected — skipping appscan tracking`);
       }
     } catch (err) {
       scanResult = 'error';
       errorMsg = err.message;
-      if (err.message.includes('Failed to fetch') || err.message.toLowerCase().includes('cors')) {
-        errorMsg = 'Network error — the Passcreator API may not allow browser requests directly. Check your API key or contact support.';
+      log('error', `Validation failed: ${err.message}`);
+      if (!proxyUrl) {
+        log('error', `No proxy URL set — go to Settings and enter your proxy endpoint`);
       }
     }
 
-    // Save to local log
+    // ── STEP 3: Save to local log ─────────────────────────────────────
     try {
       await base44.entities.ScanLog.create({
         barcodeValue,
@@ -74,6 +119,7 @@ export default function Scanner() {
         appScanSubmitted,
         errorMessage: errorMsg,
       });
+      log('ok', `Scan saved to local history`);
     } catch (_) {}
 
     setResult({
@@ -94,20 +140,23 @@ export default function Scanner() {
   const handleReset = () => {
     setResult(null);
     setManualValue('');
+    setDebugLogs([]);
     setScanKey((k) => k + 1);
   };
 
-  if (!apiKey) {
+  if (!apiKey || !proxyUrl) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-        <div className="text-center max-w-sm">
-          <AlertCircle className="w-14 h-14 text-amber-400 mx-auto mb-4" />
-          <h2 className="text-white text-xl font-bold mb-2">API Key Required</h2>
-          <p className="text-slate-400 mb-6 text-sm">
-            Set up your Passcreator API key in Settings to start scanning passes.
-          </p>
+        <div className="text-center max-w-sm space-y-3">
+          <AlertCircle className="w-14 h-14 text-amber-400 mx-auto" />
+          <h2 className="text-white text-xl font-bold">Setup Required</h2>
+          <div className="text-slate-400 text-sm space-y-1">
+            {!apiKey && <p>⚠ Passcreator API key is missing</p>}
+            {!proxyUrl && <p>⚠ Proxy URL is not configured</p>}
+          </div>
+          <p className="text-slate-500 text-xs">Configure both in Settings to start scanning.</p>
           <Link to={createPageUrl('Settings')}>
-            <Button className="gap-2">
+            <Button className="gap-2 mt-2">
               <Settings className="w-4 h-4" /> Go to Settings
             </Button>
           </Link>
@@ -142,7 +191,10 @@ export default function Scanner() {
       {/* Body */}
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 gap-6">
         {result ? (
-          <ScanResult result={result} onReset={handleReset} />
+          <>
+            <ScanResult result={result} onReset={handleReset} />
+            <DebugPanel logs={debugLogs} />
+          </>
         ) : processing ? (
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="w-14 h-14 text-blue-400 animate-spin" />
