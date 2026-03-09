@@ -85,9 +85,26 @@ export default function Settings() {
                 {saved ? <CheckCircle2 className="w-4 h-4" /> : 'Save'}
               </Button>
             </div>
-            {saved && <p className="text-emerald-400 text-xs">API key saved!</p>}
+            {saved && <p className="text-emerald-400 text-xs">Saved!</p>}
             <p className="text-slate-500 text-xs">
               Find your API key in your Passcreator account under Account Settings → API.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-slate-400 text-xs">Proxy URL</Label>
+            <Input
+              type="text"
+              value={proxyUrl}
+              onChange={(e) => setProxyUrlState(e.target.value)}
+              placeholder="https://your-proxy.com/api"
+              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+            />
+            <p className="text-slate-500 text-xs">
+              Your proxy server that forwards requests to Passcreator. The scanner will call{' '}
+              <span className="font-mono text-slate-400">/validate</span>,{' '}
+              <span className="font-mono text-slate-400">/configs</span>, and{' '}
+              <span className="font-mono text-slate-400">/track</span> on this base URL.
             </p>
           </div>
         </div>
