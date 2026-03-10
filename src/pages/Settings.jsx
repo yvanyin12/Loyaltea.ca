@@ -28,8 +28,9 @@ export default function Settings() {
     setTimeout(() => setProxySaved(false), 2000);
   };
 
-  const handleAdd = (cfg) => {
+  const handleAdd = (cfg, makeActive = false) => {
     addSavedConfig(cfg);
+    if (makeActive) setActiveConfig(cfg.configurationId);
     refresh();
   };
 
