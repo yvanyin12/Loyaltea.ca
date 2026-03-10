@@ -238,6 +238,7 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <p>{qrError}</p>
                 </div>
+                {qrDebugLogs.length > 0 && <DebugLog logs={qrDebugLogs} />}
                 <Button
                   variant="outline"
                   onClick={resetQr}
