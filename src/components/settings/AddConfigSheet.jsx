@@ -247,9 +247,6 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
             <TabsTrigger value="link" className="flex-1 data-[state=active]:bg-slate-700 text-slate-300 text-xs">
               Paste Link
             </TabsTrigger>
-            <TabsTrigger value="load" className="flex-1 data-[state=active]:bg-slate-700 text-slate-300 text-xs">
-              Load All
-            </TabsTrigger>
           </TabsList>
 
           {/* ── Scan QR tab ── */}
