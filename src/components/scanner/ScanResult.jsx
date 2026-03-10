@@ -82,10 +82,6 @@ export default function ScanResult({ result, onReset }) {
         <p className="text-slate-500 text-xs">{result.error}</p>
       )}
 
-      {result.appScanSubmitted === false && result.status !== 'error' && (
-        <p className="text-amber-500/70 text-xs">⚠ App scan not submitted (no config selected)</p>
-      )}
-
       <Button
         onClick={onReset}
         className="w-full h-12 text-base font-semibold gap-2"

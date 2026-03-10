@@ -12,6 +12,19 @@ const RESULT_STYLE = {
   error: { icon: Wifi, color: 'text-slate-400', bg: 'bg-slate-800/50 border-slate-700', label: 'Error' },
 };
 
+// Format timestamp to Montreal time (Eastern Time)
+const formatMontrealTime = (dateString) => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
+
 export default function ScanHistory() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,16 +45,18 @@ export default function ScanHistory() {
   };
 
   const exportCSV = () => {
-    const headers = ['Date', 'Time', 'Barcode', 'Result', 'Configuration', 'Amount Spent', 'Undone'];
-    const rows = scans.map((s) => [
-      s.created_date ? format(new Date(s.created_date), 'yyyy-MM-dd') : '',
-      s.created_date ? format(new Date(s.created_date), 'HH:mm:ss') : '',
-      s.barcodeValue || '',
-      s.scanResult || '',
-      s.appConfigurationName || '',
-      s.amountSpent != null ? Number(s.amountSpent).toFixed(2) : '',
-      s.isUndone ? 'Yes' : 'No',
-    ]);
+    const headers = ['Date', 'Time', 'Barcode', 'Result', 'Configuration', 'Amount Spent (CAD)'];
+    const rows = scans.map((s) => {
+      const date = s.created_date ? new Date(s.created_date) : null;
+      return [
+        date ? new Intl.DateTimeFormat('en-US', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date) : '',
+        date ? new Intl.DateTimeFormat('en-US', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(date) : '',
+        s.barcodeValue || '',
+        s.scanResult || '',
+        s.appConfigurationName || '',
+        s.amountSpent != null ? Number(s.amountSpent).toFixed(2) : '',
+      ];
+    });
     const csv = [headers, ...rows]
       .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
       .join('\n');
@@ -114,7 +129,7 @@ export default function ScanHistory() {
                           {style.label}
                         </span>
                         <span className="text-slate-500 text-xs whitespace-nowrap">
-                          {scan.created_date ? format(new Date(scan.created_date), 'MMM d, HH:mm') : '—'}
+                          {scan.created_date ? formatMontrealTime(scan.created_date) : '—'}
                         </span>
                       </div>
                       <p className="text-slate-300 font-mono text-xs mt-0.5 truncate">{scan.barcodeValue || '—'}</p>
@@ -123,7 +138,7 @@ export default function ScanHistory() {
                       )}
                       {scan.amountSpent != null && scan.amountSpent > 0 && (
                         <p className="text-xs mt-1 font-semibold text-emerald-400">
-                          €{Number(scan.amountSpent).toFixed(2)}
+                          CAD ${Number(scan.amountSpent).toFixed(2)}
                         </p>
                       )}
                       {scan.errorMessage && (

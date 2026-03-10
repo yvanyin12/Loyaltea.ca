@@ -263,7 +263,6 @@ export default function Scanner() {
             <ScanConfirmation
               passData={confirmPending.passData}
               configName={confirmPending.configName}
-              scanMode={confirmPending.scanMode}
               onConfirm={handleConfirmScan}
               onCancel={handleCancelScan}
               loading={confirmLoading}
