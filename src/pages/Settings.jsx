@@ -1,55 +1,46 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CheckCircle2, AlertCircle, Loader2, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import {
-  getApiKey, setApiKey,
   getProxyUrl, setProxyUrl,
   getSelectedConfig, setSelectedConfig,
   fetchConfigurations,
 } from '../components/api/passcreatorApi';
 
 export default function Settings() {
-  const [apiKey, setApiKeyState] = useState(getApiKey());
   const [proxyUrl, setProxyUrlState] = useState(getProxyUrl());
-  const [showKey, setShowKey] = useState(false);
   const [configs, setConfigs] = useState([]);
   const [selectedConfig, setSelectedConfigState] = useState(getSelectedConfig());
   const [loadingConfigs, setLoadingConfigs] = useState(false);
   const [configError, setConfigError] = useState(null);
   const [saved, setSaved] = useState(false);
 
-  const handleSaveKey = () => {
-    setApiKey(apiKey.trim());
+  const handleSaveProxy = () => {
     setProxyUrl(proxyUrl.trim());
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
   const handleLoadConfigs = async () => {
-    if (!apiKey.trim()) return;
     setLoadingConfigs(true);
     setConfigError(null);
     try {
-      const data = await fetchConfigurations(apiKey.trim());
+      const data = await fetchConfigurations();
       setConfigs(Array.isArray(data) ? data : []);
       if (!Array.isArray(data) || data.length === 0) {
-        setConfigError('No App Configurations found for this account.');
+        setConfigError('No App Configurations found.');
       }
     } catch (err) {
-      let msg = err.message;
-      if (msg.includes('Failed to fetch') || msg.toLowerCase().includes('cors')) {
-        msg = 'Network error — CORS may be blocking the request. Ensure your API key is valid and your browser allows this connection.';
-      }
-      setConfigError(msg);
+      setConfigError(err.message);
     }
     setLoadingConfigs(false);
   };
 
-  const handleSelectConfig = (config) => {
-    setSelectedConfigState(config);
-    setSelectedConfig(config);
+  const handleSelectConfig = (cfg) => {
+    setSelectedConfigState(cfg);
+    setSelectedConfig(cfg);
   };
 
   return (
@@ -60,51 +51,27 @@ export default function Settings() {
           <p className="text-slate-400 text-sm mt-1">Configure your Passcreator integration</p>
         </div>
 
-        {/* API Key */}
+        {/* Proxy URL */}
         <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-4">
-          <h2 className="font-semibold text-white">API Key</h2>
+          <h2 className="font-semibold text-white">Proxy Server</h2>
           <div className="space-y-2">
-            <Label className="text-slate-400 text-xs">Passcreator API Key</Label>
+            <Label className="text-slate-400 text-xs">Proxy URL</Label>
             <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  type={showKey ? 'text' : 'password'}
-                  value={apiKey}
-                  onChange={(e) => setApiKeyState(e.target.value)}
-                  placeholder="Enter your API key..."
-                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 pr-10"
-                />
-                <button
-                  onClick={() => setShowKey(!showKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                >
-                  {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <Button onClick={handleSaveKey} disabled={!apiKey.trim()}>
+              <Input
+                type="text"
+                value={proxyUrl}
+                onChange={(e) => setProxyUrlState(e.target.value)}
+                placeholder="https://your-worker.workers.dev"
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+              />
+              <Button onClick={handleSaveProxy} disabled={!proxyUrl.trim()}>
                 {saved ? <CheckCircle2 className="w-4 h-4" /> : 'Save'}
               </Button>
             </div>
-            {saved && <p className="text-emerald-400 text-xs">Saved!</p>}
+            {saved && <p className="text-emerald-400 text-xs">Proxy URL saved!</p>}
             <p className="text-slate-500 text-xs">
-              Find your API key in your Passcreator account under Account Settings → API.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-slate-400 text-xs">Proxy URL</Label>
-            <Input
-              type="text"
-              value={proxyUrl}
-              onChange={(e) => setProxyUrlState(e.target.value)}
-              placeholder="https://your-proxy.com/api"
-              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-            />
-            <p className="text-slate-500 text-xs">
-              Your proxy server that forwards requests to Passcreator. The scanner will call{' '}
-              <span className="font-mono text-slate-400">/validate</span>,{' '}
-              <span className="font-mono text-slate-400">/configs</span>, and{' '}
-              <span className="font-mono text-slate-400">/track</span> on this base URL.
+              The Cloudflare Worker that forwards requests to Passcreator.
+              Authorization is handled server-side — no API key needed here.
             </p>
           </div>
         </div>
@@ -117,7 +84,7 @@ export default function Settings() {
               variant="outline"
               size="sm"
               onClick={handleLoadConfigs}
-              disabled={!apiKey.trim() || loadingConfigs}
+              disabled={loadingConfigs}
               className="border-slate-700 text-slate-300 hover:text-white gap-2"
             >
               {loadingConfigs ? (
