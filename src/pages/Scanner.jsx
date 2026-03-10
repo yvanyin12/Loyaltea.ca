@@ -75,9 +75,17 @@ export default function Scanner() {
       }
 
       if (configId) {
-        log('info', `POST ${proxyUrl}/track  payload: ${JSON.stringify({ barcodeValue, appConfigurationId: configId })}`);
+        const trackPayload = {
+          appConfigurationId: configId,
+          passId: passData?.identifier || '',
+          scanStatus: 2,
+          createdOn: new Date().toISOString(),
+          scannedBarcodeValue: barcodeValue,
+          deviceName: 'Base44 Scanner',
+        };
+        log('info', `POST ${proxyUrl}/track  payload: ${JSON.stringify(trackPayload)}`);
         try {
-          const trackResponse = await createAppScan(barcodeValue, configId);
+          const trackResponse = await createAppScan(trackPayload);
           log('ok', `/track response: ${JSON.stringify(trackResponse)}`);
           appScanSubmitted = true;
           log('ok', `App scan tracked ✓`);

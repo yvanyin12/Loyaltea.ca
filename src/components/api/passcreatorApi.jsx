@@ -60,6 +60,6 @@ export async function checkPassByBarcode(barcodeValue) {
   return proxyPost('/validate', { barcodeValue });
 }
 
-export async function createAppScan(barcodeValue, appConfigurationId) {
-  return proxyPost('/track', { barcodeValue, appConfigurationId });
+export async function createAppScan(payload) {
+  return proxyPost('/track', payload);
 }
