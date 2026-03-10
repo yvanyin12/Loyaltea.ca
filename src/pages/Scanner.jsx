@@ -326,6 +326,7 @@ export default function Scanner() {
     setShowAmountInput(false);
     setPendingScanId(null);
     setConfirmPending(null);
+    setPointsFlow(null);
   };
 
   if (!proxyUrl) {
