@@ -109,15 +109,31 @@ export default function Scanner() {
 
     // Show confirmation dialog for valid passes
     if (scanResult === 'valid' && configId) {
-      const scanMode = config?.scanMode ?? 1; // default to attendance mode
-      setConfirmPending({
-        passData,
-        configName: config?.name || '',
-        scanMode,
-        barcodeValue,
-        configId,
-        scanResult,
-      });
+      // Check if this is a points mode pass
+      if (hasPointsField(passData)) {
+        const currentPoints = getCurrentPoints(passData);
+        const rewardPercent = config?.rewardPercent || 0.10; // default 10%
+        setPointsFlow({
+          passData,
+          configId,
+          barcodeValue,
+          currentPoints,
+          rewardPercent,
+          configName: config?.name || '',
+        });
+        log('ok', `Points mode detected. Current balance: ${currentPoints}`);
+      } else {
+        // Stamps mode
+        const scanMode = config?.scanMode ?? 1; // default to attendance mode
+        setConfirmPending({
+          passData,
+          configName: config?.name || '',
+          scanMode,
+          barcodeValue,
+          configId,
+          scanResult,
+        });
+      }
     }
 
     setProcessing(false);
