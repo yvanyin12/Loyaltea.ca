@@ -62,12 +62,14 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
   const [qrState, setQrState] = useState('scanning');
   const [qrResult, setQrResult] = useState(null);
   const [qrError, setQrError] = useState(null);
+  const [qrDebugLogs, setQrDebugLogs] = useState([]);
 
   // Link tab — states: 'idle' | 'loading' | 'result'
   const [linkInput, setLinkInput] = useState('');
   const [linkState, setLinkState] = useState('idle');
   const [linkResult, setLinkResult] = useState(null);
   const [linkError, setLinkError] = useState(null);
+  const [linkDebugLogs, setLinkDebugLogs] = useState([]);
 
   const isAlreadySaved = (id) => savedConfigs.some((c) => c.configurationId === id);
 
