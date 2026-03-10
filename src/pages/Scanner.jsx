@@ -138,8 +138,9 @@ export default function Scanner() {
       }
 
       if (configId) {
-        // scanStatus: 1 = valid scan, 2 = already voided/invalid
-        const resolvedScanStatus = scanResult === 'valid' ? 1 : 2;
+        // Passcreator scanStatus values:
+        // 0 = voided after this scan, 1 = was already voided (invalid), 2 = attendance saved (valid loyalty scan), 3 = pass not found
+        const resolvedScanStatus = scanResult === 'valid' ? 2 : scanResult === 'already_voided' ? 1 : 3;
         const trackPayload = {
           appConfigurationId: configId,
           passId: passData?.identifier || '',
