@@ -226,10 +226,12 @@ export default function Scanner() {
           barcodeValue,
           passIdentifier: passData?.identifier || '',
           appConfigurationId: configId || '',
-          scanStatus: 2, // the scanStatus that was sent to /track
-          amountSpent: null, // filled in by handleAmountSave
+          scanStatus: 2,
+          appScanId: appScanId, // Passcreator appscan UUID — required for DELETE undo
+          amountSpent: null,
         };
-        log('info', `[UNDO SNAPSHOT] Stored for undo: scanLogId=${created.id}, passId="${passData?.identifier || ''}", configId="${configId || ''}", scanStatus=2`);
+        log('info', `[UNDO SNAPSHOT] Stored for undo: scanLogId=${created.id}, passId="${passData?.identifier || ''}", configId="${configId || ''}", appScanId="${appScanId || '(none — undo will not work)'}"`);
+        if (!appScanId) log('warn', `[UNDO SNAPSHOT] appScanId is null — /track response did not include an identifier. Check proxy /track response above.`);
         setShowAmountInput(true);
       }
     } catch (_) {}
