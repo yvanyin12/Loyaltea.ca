@@ -48,15 +48,15 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import ScanHistory from './pages/ScanHistory';
-import Settings from './pages/Settings';
 import Scanner from './pages/Scanner';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "ScanHistory": ScanHistory,
-    "Settings": Settings,
     "Scanner": Scanner,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {
