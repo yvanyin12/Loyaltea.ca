@@ -115,3 +115,7 @@ export async function checkPassByBarcode(barcodeValue) {
 export async function createAppScan(payload) {
   return proxyPost('/track', payload);
 }
+
+export async function reverseAppScan(payload) {
+  return proxyPost('/reverse', payload);
+}
