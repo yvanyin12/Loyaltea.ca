@@ -64,7 +64,14 @@ export default function ScanHistory() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `scan-history-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    const now = new Date();
+    const montrealDate = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Toronto',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(now);
+    a.download = `scan-history-${montrealDate}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
