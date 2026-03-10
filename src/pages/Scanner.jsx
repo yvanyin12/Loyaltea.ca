@@ -97,7 +97,7 @@ export default function Scanner() {
       await base44.entities.ScanLog.create({
         barcodeValue,
         passIdentifier: passData?.identifier || '',
-        appConfigurationId: config?.configurationId || '',
+        appConfigurationId: configId || '',
         appConfigurationName: config?.name || '',
         scanResult,
         isVoided: passData?.voided || false,
