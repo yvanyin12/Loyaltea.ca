@@ -78,22 +78,26 @@ export default function Scanner() {
       }
 
       if (configId) {
+        // scanStatus: 1 = valid scan, 2 = already voided/invalid
+        const resolvedScanStatus = scanResult === 'valid' ? 1 : 2;
         const trackPayload = {
           appConfigurationId: configId,
           passId: passData?.identifier || '',
-          scanStatus: 2,
+          scanStatus: resolvedScanStatus,
           createdOn: new Date().toISOString(),
           scannedBarcodeValue: barcodeValue,
           deviceName: 'Base44 Scanner',
         };
         log('info', `POST ${proxyUrl}/track  payload: ${JSON.stringify(trackPayload)}`);
+        log('info', `scanStatus sent: ${resolvedScanStatus} (${resolvedScanStatus === 1 ? 'VALID — should trigger loyalty update' : 'INVALID — no loyalty update expected'})`);
         try {
           const trackResponse = await createAppScan(trackPayload);
-          log('ok', `/track response: ${JSON.stringify(trackResponse)}`);
+          log('ok', `/track raw response: ${JSON.stringify(trackResponse)}`);
           appScanSubmitted = true;
-          log('ok', `App scan tracked ✓`);
+          log('ok', `App scan tracked ✓ — wallet update depends on Passcreator App Configuration automation`);
+          log('info', `NOTE: No separate pass update call is made — loyalty stamp/point is applied only if the App Configuration has automation enabled in Passcreator`);
         } catch (e) {
-          log('warn', `App scan tracking failed: ${e.message}`);
+          log('error', `App scan tracking FAILED: ${e.message}`);
         }
       } else {
         log('warn', `No configId found — skipping /track. Config in storage: ${JSON.stringify(config)}`);
