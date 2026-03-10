@@ -8,6 +8,7 @@ import { createPageUrl } from '@/utils';
 import QRScanner from '../components/scanner/QRScanner';
 import ScanResult from '../components/scanner/ScanResult';
 import DebugPanel from '../components/scanner/DebugPanel';
+import AmountInput from '../components/scanner/AmountInput';
 import {
   getProxyUrl,
   getSelectedConfig,
