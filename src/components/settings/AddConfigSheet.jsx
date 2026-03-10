@@ -57,7 +57,7 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
         setLinkResult(match);
       } else {
         setLinkError(
-          `UUID ${uuid} was found in the link but didn't match any Passcreator configuration.`
+          `UUID ${uuid} was found in the link but didn't match any saved configuration.`
         );
       }
     } catch (e) {
