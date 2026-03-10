@@ -235,6 +235,7 @@ export default function Scanner() {
     clearInterval(undoTimerRef.current);
     setUndoCountdown(0);
     setUndoMessage(null);
+    setUndoLoading(false);
     lastScanRef.current = null;
   };
 
