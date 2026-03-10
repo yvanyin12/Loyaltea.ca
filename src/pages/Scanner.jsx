@@ -211,12 +211,14 @@ export default function Scanner() {
       } catch (_) {}
     }
     setShowAmountInput(false);
-    setPendingScanId(null);
+    // Start undo countdown now that amount is done
+    if (lastScanRef.current) startUndoCountdown(lastScanRef.current);
   };
 
   const handleAmountSkip = () => {
     setShowAmountInput(false);
-    setPendingScanId(null);
+    // Start undo countdown now that amount step is skipped
+    if (lastScanRef.current) startUndoCountdown(lastScanRef.current);
   };
 
   const handleManualSubmit = () => {
