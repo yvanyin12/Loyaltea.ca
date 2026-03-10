@@ -48,7 +48,7 @@ export default function Settings() {
       <div className="max-w-lg mx-auto px-5 py-8 space-y-8">
         <div>
           <h1 className="text-2xl font-bold text-white">Settings</h1>
-          <p className="text-slate-400 text-sm mt-1">Configure your Passcreator integration</p>
+          <p className="text-slate-400 text-sm mt-1">Configure your scanner integration</p>
         </div>
 
         {/* ── Proxy URL ── */}
@@ -70,7 +70,7 @@ export default function Settings() {
             </div>
             {proxySaved && <p className="text-emerald-400 text-xs">Proxy URL saved!</p>}
             <p className="text-slate-500 text-xs">
-              The Cloudflare Worker that forwards requests to Passcreator.
+              The proxy server that forwards scan requests.
               Authorization is handled server-side — no API key needed here.
             </p>
           </div>

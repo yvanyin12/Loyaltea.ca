@@ -79,10 +79,10 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
         <Tabs defaultValue="load">
           <TabsList className="bg-slate-800 w-full">
             <TabsTrigger value="load" className="flex-1 data-[state=active]:bg-slate-700 text-slate-300">
-              Load from Passcreator
+              Load Configurations
             </TabsTrigger>
             <TabsTrigger value="link" className="flex-1 data-[state=active]:bg-slate-700 text-slate-300">
-              Import via Link
+              Import Configuration
             </TabsTrigger>
           </TabsList>
 
@@ -99,7 +99,7 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
               ) : (
                 <RefreshCw className="w-4 h-4" />
               )}
-              {loading ? 'Fetching…' : 'Fetch from Passcreator'}
+              {loading ? 'Fetching…' : 'Fetch Configurations'}
             </Button>
 
             {error && (
@@ -146,8 +146,8 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
           {/* ── Link import tab ── */}
           <TabsContent value="link" className="mt-4 space-y-3 pb-4">
             <p className="text-slate-400 text-sm">
-              Paste a Passcreator scanner link or QR URL. The app will extract the
-              configuration UUID and match it automatically.
+              Paste a scanner configuration link or QR URL. The app will extract the
+              configuration and match it automatically.
             </p>
             <Input
               value={linkInput}
@@ -156,7 +156,7 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
                 setLinkResult(null);
                 setLinkError(null);
               }}
-              placeholder="https://passcreator.com/... or passcreator://..."
+              placeholder="https://... or paste a configuration link"
               className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
             />
             <Button
