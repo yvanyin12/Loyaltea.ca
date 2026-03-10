@@ -183,13 +183,14 @@ export default function Scanner() {
       });
       if (scanResult === 'valid' && created?.id) {
         setPendingScanId(created.id);
-        setShowAmountInput(true);
-        startUndoCountdown({
+        // Store snapshot for undo — countdown starts after amount input is dismissed
+        lastScanRef.current = {
           scanLogId: created.id,
           barcodeValue,
           passIdentifier: passData?.identifier || '',
           appConfigurationId: configId || '',
-        });
+        };
+        setShowAmountInput(true);
       }
     } catch (_) {}
 
