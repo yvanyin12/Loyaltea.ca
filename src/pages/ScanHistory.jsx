@@ -15,8 +15,17 @@ const RESULT_STYLE = {
 // Format timestamp to Montreal time (Eastern Time)
 const formatMontrealTime = (dateString) => {
   try {
-    const date = new Date(dateString);
+    // Ensure we have a valid date object
+    let date;
+    if (typeof dateString === 'string') {
+      // Handle ISO format and other common formats
+      date = new Date(dateString);
+    } else {
+      date = new Date(dateString);
+    }
+    
     if (isNaN(date.getTime())) return '—';
+    
     return new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/Toronto',
       year: 'numeric',
