@@ -148,6 +148,16 @@ export default function ScanHistory() {
                           CAD ${Number(scan.amountSpent).toFixed(2)}
                         </p>
                       )}
+                      {scan.loyaltyMode === 'points' && (
+                        <div className="text-xs mt-1 space-y-0.5">
+                          <p className="text-blue-400 font-semibold">
+                            {scan.pointsEarned != null ? `+${scan.pointsEarned.toLocaleString()} pts` : 'Points pending'}
+                          </p>
+                          {scan.newPointsBalance != null && (
+                            <p className="text-emerald-400">Balance: {scan.newPointsBalance.toLocaleString()}</p>
+                          )}
+                        </div>
+                      )}
                       {scan.errorMessage && (
                         <p className="text-red-400/70 text-xs mt-1 line-clamp-2">{scan.errorMessage}</p>
                       )}
