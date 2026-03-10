@@ -4,7 +4,7 @@ import { CheckCircle2, XCircle, AlertCircle, Wifi, Trash2, RefreshCw, Download, 
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import RevenueStats from '../components/history/RevenueStats';
-import { reverseAppScan } from '../components/api/passcreatorApi';
+import { deleteAppScan } from '../components/api/passcreatorApi';
 
 const RESULT_STYLE = {
   valid: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-950/40 border-emerald-800', label: 'Valid' },
