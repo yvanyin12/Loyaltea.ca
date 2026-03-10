@@ -24,7 +24,6 @@ export default function Scanner() {
   const [debugLogs, setDebugLogs] = useState([]);
 
   const proxyUrl = getProxyUrl();
-  const config = getSelectedConfig();
 
   const log = (level, message) => {
     console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](
