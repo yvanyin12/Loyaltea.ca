@@ -80,12 +80,12 @@ export default function Scanner() {
           const trackResponse = await createAppScan(barcodeValue, configId);
           log('ok', `/track response: ${JSON.stringify(trackResponse)}`);
           appScanSubmitted = true;
-          log('ok', `App scan tracked ✓ — wallet pass will update`);
+          log('ok', `App scan tracked ✓`);
         } catch (e) {
           log('warn', `App scan tracking failed: ${e.message}`);
         }
       } else {
-        log('warn', `No app config selected — skipping tracking. Select one in Settings.`);
+        log('warn', `No configId found — skipping /track. Config in storage: ${JSON.stringify(config)}`);
       }
     } catch (err) {
       scanResult = 'error';
