@@ -7,6 +7,30 @@ import { AlertCircle, CheckCircle2, Link2, Loader2, RefreshCw, ScanLine } from '
 import { fetchConfigurations } from '../api/passcreatorApi';
 import QRScanner from '../scanner/QRScanner';
 
+// ── Debug log panel ──────────────────────────────────────────────
+
+function DebugLog({ logs }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="rounded-xl border border-slate-700 bg-slate-800/60 text-xs font-mono overflow-hidden">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between px-3 py-2 text-slate-400 hover:text-slate-200"
+      >
+        <span>Debug log ({logs.length} lines)</span>
+        <span>{expanded ? '▲' : '▼'}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 pb-3 space-y-0.5 max-h-64 overflow-y-auto">
+          {logs.map((l, i) => (
+            <p key={i} className="text-slate-300 break-all leading-5">{l}</p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Shared result card ───────────────────────────────────────────
 
 function MatchResult({ cfg, isSaved, onAdd, onAddAndActivate }) {
