@@ -92,7 +92,6 @@ export default function Scanner() {
 
     setUndoLoading(false);
     setUndoMessage({ type: 'success', text: 'Scan undone successfully' });
-    setTimeout(() => setUndoMessage(null), 4000);
   };
 
   const handleScan = async (barcodeValue) => {
