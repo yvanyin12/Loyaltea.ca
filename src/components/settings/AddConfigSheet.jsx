@@ -127,11 +127,14 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
   const handleQrScan = async (value) => {
     setQrState('loading');
     setQrError(null);
+    setQrDebugLogs([]);
     try {
       const match = await extractAndMatch(value);
+      setQrDebugLogs(match._debugLogs || []);
       setQrResult(match);
       setQrState('result');
     } catch (e) {
+      setQrDebugLogs(e.debugLogs || []);
       setQrError(e.message);
       setQrState('error');
     }
