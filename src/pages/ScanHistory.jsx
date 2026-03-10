@@ -42,7 +42,7 @@ export default function ScanHistory() {
   };
 
   const exportCSV = () => {
-    const headers = ['Date', 'Time', 'Barcode', 'Result', 'Configuration', 'Amount Spent (CAD)'];
+    const headers = ['Date', 'Time', 'Barcode', 'Result', 'Configuration', 'Mode', 'Amount Spent (CAD)', 'Points Earned', 'Points Balance'];
     const rows = scans.map((s) => {
       const m = s.created_date ? moment.utc(s.created_date).tz('America/Toronto') : null;
       return [
@@ -51,7 +51,10 @@ export default function ScanHistory() {
         s.barcodeValue || '',
         s.scanResult || '',
         s.appConfigurationName || '',
+        s.loyaltyMode || '',
         s.amountSpent != null ? Number(s.amountSpent).toFixed(2) : '',
+        s.pointsEarned != null ? s.pointsEarned : '',
+        s.newPointsBalance != null ? s.newPointsBalance : '',
       ];
     });
     const csv = [headers, ...rows]
