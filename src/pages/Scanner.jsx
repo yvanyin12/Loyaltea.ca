@@ -106,6 +106,7 @@ export default function Scanner() {
 
     let reverseOk = false;
     try {
+      log('info', `[UNDO] Calling proxy POST /delete-scan → DELETE https://app.passcreator.com/api/appscan/${snap.appScanId}`);
       const reverseResponse = await deleteAppScan(snap.appScanId);
       log('ok', `[UNDO] UNDO RESPONSE: ${JSON.stringify(reverseResponse)}`);
       reverseOk = true;
@@ -113,10 +114,14 @@ export default function Scanner() {
       log('error', `[UNDO] UNDO RESPONSE: ERROR — ${e.message}`);
     }
 
-    try {
-      await base44.entities.ScanLog.update(snap.scanLogId, { isUndone: true });
-    } catch (e) {
-      log('warn', `[UNDO] DB update failed: ${e.message}`);
+    if (reverseOk) {
+      try {
+        await base44.entities.ScanLog.update(snap.scanLogId, { isUndone: true });
+      } catch (e) {
+        log('warn', `[UNDO] DB update failed: ${e.message}`);
+      }
+    } else {
+      log('warn', `[UNDO] Passcreator delete failed — local record NOT marked as undone`);
     }
 
     setUndoLoading(false);
@@ -124,7 +129,6 @@ export default function Scanner() {
       log('ok', `[UNDO SUCCESS] Reverse sent successfully — wallet update handled by Passcreator automation`);
       setUndoMessage({ type: 'success', text: 'Scan undone successfully' });
     } else {
-      log('error', `[UNDO FAILED] /reverse call failed — local record marked undone but wallet may not have changed`);
       setUndoMessage({ type: 'error', text: 'Undo failed — see debug log' });
     }
   };
