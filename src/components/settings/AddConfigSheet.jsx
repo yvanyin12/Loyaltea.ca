@@ -152,11 +152,14 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
     setLinkState('loading');
     setLinkError(null);
     setLinkResult(null);
+    setLinkDebugLogs([]);
     try {
       const match = await extractAndMatch(linkInput);
+      setLinkDebugLogs(match._debugLogs || []);
       setLinkResult(match);
       setLinkState('result');
     } catch (e) {
+      setLinkDebugLogs(e.debugLogs || []);
       setLinkError(e.message);
       setLinkState('idle');
     }
@@ -166,6 +169,7 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
     setLinkInput('');
     setLinkResult(null);
     setLinkError(null);
+    setLinkDebugLogs([]);
     setLinkState('idle');
   };
 
