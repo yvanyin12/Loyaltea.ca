@@ -34,8 +34,20 @@ export default function ScanHistory() {
   };
 
   const handleUndo = async (scan) => {
+    if (!window.confirm('Undo this scan? This will attempt to reverse the wallet change.')) return;
+    setUndoingId(scan.id);
+    try {
+      await reverseAppScan({
+        appConfigurationId: scan.appConfigurationId,
+        passId: scan.passIdentifier,
+        scannedBarcodeValue: scan.barcodeValue,
+      });
+    } catch (e) {
+      console.warn('[Undo] Reverse API call failed:', e.message, '— marking as undone in app only');
+    }
     await base44.entities.ScanLog.update(scan.id, { isUndone: true });
     setScans((prev) => prev.map((s) => s.id === scan.id ? { ...s, isUndone: true } : s));
+    setUndoingId(null);
   };
 
   const exportCSV = () => {
