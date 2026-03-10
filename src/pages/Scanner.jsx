@@ -157,6 +157,8 @@ export default function Scanner() {
     setManualValue('');
     setDebugLogs([]);
     setScanKey((k) => k + 1);
+    setShowAmountInput(false);
+    setPendingScanId(null);
   };
 
   if (!proxyUrl) {
