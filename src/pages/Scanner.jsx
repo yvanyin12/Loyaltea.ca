@@ -189,7 +189,10 @@ export default function Scanner() {
           barcodeValue,
           passIdentifier: passData?.identifier || '',
           appConfigurationId: configId || '',
+          scanStatus: 2, // the scanStatus that was sent to /track
+          amountSpent: null, // filled in by handleAmountSave
         };
+        log('info', `[UNDO SNAPSHOT] Stored for undo: scanLogId=${created.id}, passId="${passData?.identifier || ''}", configId="${configId || ''}", scanStatus=2`);
         setShowAmountInput(true);
       }
     } catch (_) {}
