@@ -74,20 +74,39 @@ export default function Scanner() {
     const snap = lastScanRef.current;
     lastScanRef.current = null;
 
+    // ── DEBUG: Original scan details ──────────────────────────────
+    log('info', `[UNDO] ── UNDO INITIATED ──────────────────────────`);
+    log('info', `[UNDO] Target scan record: scanLogId="${snap.scanLogId}"`);
+    log('info', `[UNDO] Original scan snapshot: barcodeValue="${snap.barcodeValue}", passId="${snap.passIdentifier}", appConfigurationId="${snap.appConfigurationId}", scanStatus=${snap.scanStatus}, amountSpent=${snap.amountSpent ?? '(not entered)'}`);
+
+    const reversePayload = {
+      appConfigurationId: snap.appConfigurationId,
+      passId: snap.passIdentifier,
+      scannedBarcodeValue: snap.barcodeValue,
+    };
+
+    // ── DEBUG: Undo request payload ───────────────────────────────
+    log('info', `[UNDO] UNDO REQUEST PAYLOAD: ${JSON.stringify(reversePayload)}`);
+    log('info', `[UNDO] passId matches original: ${reversePayload.passId === snap.passIdentifier}`);
+    log('info', `[UNDO] appConfigurationId matches original: ${reversePayload.appConfigurationId === snap.appConfigurationId}`);
+    log('info', `[UNDO] NOTE: Reverse payload does NOT send a negative value — Passcreator handles the reversal server-side via the /reverse endpoint`);
+    log('info', `[UNDO] NOTE: After /reverse, wallet update depends on Passcreator server-side automation (no separate pass update call is made)`);
+
     try {
-      await reverseAppScan({
-        appConfigurationId: snap.appConfigurationId,
-        passId: snap.passIdentifier,
-        scannedBarcodeValue: snap.barcodeValue,
-      });
+      const reverseResponse = await reverseAppScan(reversePayload);
+      // ── DEBUG: Undo response ──────────────────────────────────
+      log('ok', `[UNDO] UNDO RESPONSE: ${JSON.stringify(reverseResponse)}`);
+      log('ok', `[UNDO] Reverse API call succeeded ✓`);
     } catch (e) {
-      log('warn', `[Undo] Reverse API failed: ${e.message} — marking undone in app only`);
+      log('error', `[UNDO] UNDO RESPONSE: ERROR — ${e.message}`);
+      log('warn', `[UNDO] Reverse API failed — marking undone in app only`);
     }
 
     try {
       await base44.entities.ScanLog.update(snap.scanLogId, { isUndone: true });
+      log('ok', `[UNDO] ScanLog record ${snap.scanLogId} marked as isUndone=true ✓`);
     } catch (e) {
-      log('warn', `[Undo] Failed to mark scan as undone: ${e.message}`);
+      log('warn', `[UNDO] Failed to mark scan as undone in DB: ${e.message}`);
     }
 
     setUndoLoading(false);
