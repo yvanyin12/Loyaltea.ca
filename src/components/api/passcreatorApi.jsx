@@ -6,6 +6,7 @@
  * POST /configs   body: {}                              → Array of App Configuration objects
  * POST /validate  body: { barcodeValue }                → { voided, identifier, error, ... }
  * POST /track     body: { appConfigurationId, passId, scanStatus, createdOn, scannedBarcodeValue, deviceName }
+ * POST /reverse   body: { appConfigurationId, passId, scannedBarcodeValue }  → reversal confirmation
  */
 
 const DEFAULT_PROXY_URL = 'https://square-bush-df0f.yvanyin123.workers.dev';
