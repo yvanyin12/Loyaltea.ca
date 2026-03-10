@@ -23,6 +23,8 @@ export default function Scanner() {
   const [result, setResult] = useState(null);
   const [scanKey, setScanKey] = useState(0);
   const [debugLogs, setDebugLogs] = useState([]);
+  const [pendingScanId, setPendingScanId] = useState(null);
+  const [showAmountInput, setShowAmountInput] = useState(false);
 
   const proxyUrl = getProxyUrl();
 
