@@ -16,6 +16,13 @@ import {
   checkPassByBarcode,
   createAppScan,
 } from '../components/api/passcreatorApi';
+import {
+  getCurrentPoints,
+  hasPointsField,
+  calculatePoints,
+  updatePointsField,
+} from '../components/api/pointsApi';
+import PointsConfirmation from '../components/scanner/PointsConfirmation';
 
 export default function Scanner() {
   const [mode, setMode] = useState('camera');
