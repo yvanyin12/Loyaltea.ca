@@ -66,18 +66,29 @@ export default function Scanner() {
   };
 
   const handleUndo = async () => {
-    if (!window.confirm('Undo this scan? This will reverse the loyalty change on the wallet.')) return;
+    // [UNDO START] — logged before anything else so we know the button was clicked
+    log('info', `[UNDO START] Undo button clicked`);
+
+    const snap = lastScanRef.current;
+
+    if (!snap) {
+      log('error', `[UNDO FAILED] No scan snapshot found — lastScanRef is null`);
+      setUndoMessage({ type: 'error', text: 'Nothing to undo' });
+      return;
+    }
+
     clearInterval(undoTimerRef.current);
     setUndoCountdown(0);
     setUndoLoading(true);
-
-    const snap = lastScanRef.current;
     lastScanRef.current = null;
 
-    // ── DEBUG: Original scan details ──────────────────────────────
-    log('info', `[UNDO] ── UNDO INITIATED ──────────────────────────`);
-    log('info', `[UNDO] Target scan record: scanLogId="${snap.scanLogId}"`);
-    log('info', `[UNDO] Original scan snapshot: barcodeValue="${snap.barcodeValue}", passId="${snap.passIdentifier}", appConfigurationId="${snap.appConfigurationId}", scanStatus=${snap.scanStatus}, amountSpent=${snap.amountSpent ?? '(not entered)'}`);
+    // ── Original scan details ─────────────────────────────────────
+    log('info', `[UNDO] scanLogId="${snap.scanLogId}"`);
+    log('info', `[UNDO] passId="${snap.passIdentifier}"`);
+    log('info', `[UNDO] appConfigurationId="${snap.appConfigurationId}"`);
+    log('info', `[UNDO] scannedBarcodeValue="${snap.barcodeValue}"`);
+    log('info', `[UNDO] original scanStatus=${snap.scanStatus}`);
+    log('info', `[UNDO] amountSpent=${snap.amountSpent ?? '(not entered)'}`);
 
     const reversePayload = {
       appConfigurationId: snap.appConfigurationId,
@@ -85,32 +96,36 @@ export default function Scanner() {
       scannedBarcodeValue: snap.barcodeValue,
     };
 
-    // ── DEBUG: Undo request payload ───────────────────────────────
+    // ── Undo request ──────────────────────────────────────────────
     log('info', `[UNDO] UNDO REQUEST PAYLOAD: ${JSON.stringify(reversePayload)}`);
-    log('info', `[UNDO] passId matches original: ${reversePayload.passId === snap.passIdentifier}`);
-    log('info', `[UNDO] appConfigurationId matches original: ${reversePayload.appConfigurationId === snap.appConfigurationId}`);
-    log('info', `[UNDO] NOTE: Reverse payload does NOT send a negative value — Passcreator handles the reversal server-side via the /reverse endpoint`);
-    log('info', `[UNDO] NOTE: After /reverse, wallet update depends on Passcreator server-side automation (no separate pass update call is made)`);
+    log('info', `[UNDO] Uses same passId: ${reversePayload.passId === snap.passIdentifier}`);
+    log('info', `[UNDO] Uses same appConfigurationId: ${reversePayload.appConfigurationId === snap.appConfigurationId}`);
+    log('info', `[UNDO] Does NOT send a negative value — reversal is handled server-side by Passcreator /reverse`);
+    log('info', `[UNDO] Does NOT create a second App Scan — calls /reverse, not /track`);
 
+    let reverseOk = false;
     try {
       const reverseResponse = await reverseAppScan(reversePayload);
-      // ── DEBUG: Undo response ──────────────────────────────────
       log('ok', `[UNDO] UNDO RESPONSE: ${JSON.stringify(reverseResponse)}`);
-      log('ok', `[UNDO] Reverse API call succeeded ✓`);
+      reverseOk = true;
     } catch (e) {
       log('error', `[UNDO] UNDO RESPONSE: ERROR — ${e.message}`);
-      log('warn', `[UNDO] Reverse API failed — marking undone in app only`);
     }
 
     try {
       await base44.entities.ScanLog.update(snap.scanLogId, { isUndone: true });
-      log('ok', `[UNDO] ScanLog record ${snap.scanLogId} marked as isUndone=true ✓`);
     } catch (e) {
-      log('warn', `[UNDO] Failed to mark scan as undone in DB: ${e.message}`);
+      log('warn', `[UNDO] DB update failed: ${e.message}`);
     }
 
     setUndoLoading(false);
-    setUndoMessage({ type: 'success', text: 'Scan undone successfully' });
+    if (reverseOk) {
+      log('ok', `[UNDO SUCCESS] Reverse sent successfully — wallet update handled by Passcreator automation`);
+      setUndoMessage({ type: 'success', text: 'Scan undone successfully' });
+    } else {
+      log('error', `[UNDO FAILED] /reverse call failed — local record marked undone but wallet may not have changed`);
+      setUndoMessage({ type: 'error', text: 'Undo failed — see debug log' });
+    }
   };
 
   const handleScan = async (barcodeValue) => {
