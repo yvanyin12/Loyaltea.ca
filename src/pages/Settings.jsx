@@ -13,12 +13,14 @@ import {
 } from '../components/api/passcreatorApi';
 import ConfigList from '../components/settings/ConfigList';
 import AddConfigSheet from '../components/settings/AddConfigSheet';
+import ConfigEditor from '../components/settings/ConfigEditor';
 
 export default function Settings() {
   const [proxyUrl, setProxyUrlState] = useState(getProxyUrl());
   const [configs, setConfigs] = useState(getSavedConfigs());
   const [proxySaved, setProxySaved] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingConfig, setEditingConfig] = useState(null);
 
   const refresh = () => setConfigs(getSavedConfigs());
 
@@ -42,6 +44,22 @@ export default function Settings() {
   const handleSetActive = (id) => {
     setActiveConfig(id);
     refresh();
+  };
+
+  const handleEditConfig = (cfg) => {
+    setEditingConfig(cfg);
+  };
+
+  const handleUpdateConfig = (updated) => {
+    const idx = configs.findIndex((c) => c.configurationId === updated.configurationId);
+    if (idx >= 0) {
+      const newConfigs = [...configs];
+      newConfigs[idx] = updated;
+      setConfigs(newConfigs);
+      // Save to localStorage
+      localStorage.setItem('passcreator_configs', JSON.stringify(newConfigs));
+    }
+    setEditingConfig(null);
   };
 
   return (
@@ -95,6 +113,7 @@ export default function Settings() {
             configs={configs}
             onSetActive={handleSetActive}
             onRemove={handleRemove}
+            onEdit={handleEditConfig}
           />
         </div>
       </div>
@@ -105,6 +124,14 @@ export default function Settings() {
         onAdd={handleAdd}
         savedConfigs={configs}
       />
+
+      {editingConfig && (
+        <ConfigEditor
+          config={editingConfig}
+          onUpdate={handleUpdateConfig}
+          onClose={() => setEditingConfig(null)}
+        />
+      )}
     </div>
   );
 }
