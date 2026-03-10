@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Euro, Check, SkipForward } from 'lucide-react';
+import { DollarSign, Check, SkipForward } from 'lucide-react';
 
 export default function AmountInput({ onSave, onSkip }) {
   const [value, setValue] = useState('');
@@ -14,8 +14,8 @@ export default function AmountInput({ onSave, onSkip }) {
   return (
     <div className="bg-slate-800 border border-emerald-800/50 rounded-xl p-4 space-y-3 w-full max-w-sm">
       <p className="text-slate-300 text-sm font-medium flex items-center gap-2">
-        <Euro className="w-4 h-4 text-emerald-400" />
-        Amount Spent
+        <DollarSign className="w-4 h-4 text-emerald-400" />
+        Amount Spent (CAD)
       </p>
       <Input
         type="number"
