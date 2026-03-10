@@ -213,6 +213,8 @@ export default function Scanner() {
         await base44.entities.ScanLog.update(pendingScanId, { amountSpent: amount });
       } catch (_) {}
     }
+    // Attach amount to snapshot so undo payload can include it
+    if (lastScanRef.current) lastScanRef.current.amountSpent = amount;
     setShowAmountInput(false);
     // Start undo countdown now that amount is done
     if (lastScanRef.current) startUndoCountdown(lastScanRef.current);
