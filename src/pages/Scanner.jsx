@@ -146,8 +146,8 @@ export default function Scanner() {
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
         <div>
           <h1 className="text-white font-bold text-lg leading-none">Pass Scanner</h1>
-          {config ? (
-            <p className="text-blue-400 text-xs mt-0.5">{config.name}</p>
+          {getSelectedConfig() ? (
+            <p className="text-blue-400 text-xs mt-0.5">{getSelectedConfig().name}</p>
           ) : (
             <p className="text-amber-500/80 text-xs mt-0.5">No config selected — go to Settings</p>
           )}
