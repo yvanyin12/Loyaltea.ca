@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { CheckCircle2, XCircle, AlertCircle, Wifi, Trash2, RefreshCw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import moment from 'moment-timezone';
 import RevenueStats from '../components/history/RevenueStats';
 
 const RESULT_STYLE = {
@@ -15,27 +16,7 @@ const RESULT_STYLE = {
 // Format timestamp to Montreal time (Eastern Time)
 const formatMontrealTime = (dateString) => {
   try {
-    // Ensure we have a valid date object
-    let date;
-    if (typeof dateString === 'string') {
-      // Handle ISO format and other common formats
-      date = new Date(dateString);
-    } else {
-      date = new Date(dateString);
-    }
-    
-    if (isNaN(date.getTime())) return '—';
-    
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Toronto',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-    }).format(date);
+    return moment(dateString).tz('America/Toronto').format('MMM D, YYYY h:mm:ss A');
   } catch {
     return '—';
   }
