@@ -216,6 +216,7 @@ export default function Scanner() {
         scanResult,
         isVoided: passData?.voided || false,
         appScanSubmitted,
+        appScanId: appScanId || '',
         errorMessage: errorMsg,
         isUndone: false,
       });
