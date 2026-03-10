@@ -208,6 +208,9 @@ export default function Scanner() {
         {result ? (
           <>
             <ScanResult result={result} onReset={handleReset} />
+            {showAmountInput && result.status === 'valid' && (
+              <AmountInput onSave={handleAmountSave} onSkip={handleAmountSkip} />
+            )}
             <DebugPanel logs={debugLogs} />
           </>
         ) : processing ? (
