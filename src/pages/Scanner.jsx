@@ -38,6 +38,10 @@ export default function Scanner() {
   const [confirmPending, setConfirmPending] = useState(null); // { passData, configName, scanMode, barcodeValue, configId, scanResult }
   const [confirmLoading, setConfirmLoading] = useState(false);
 
+  // Points mode state
+  const [pointsFlow, setPointsFlow] = useState(null); // { passData, configId, barcodeValue, currentPoints, rewardPercent, configName }
+  const [pointsLoading, setPointsLoading] = useState(false);
+
   const proxyUrl = getProxyUrl();
 
   const log = (level, message) => {
