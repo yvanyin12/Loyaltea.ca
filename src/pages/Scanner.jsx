@@ -148,6 +148,7 @@ export default function Scanner() {
     let passData = null;
     let errorMsg = '';
     let appScanSubmitted = false;
+    let appScanId = null; // identifier returned by /track, used for Undo (DELETE /api/appscan/{id})
 
     try {
       log('info', `POST ${proxyUrl}/validate  { barcodeValue: "${barcodeValue}" }`);
