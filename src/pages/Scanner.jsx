@@ -74,10 +74,11 @@ export default function Scanner() {
         log('ok', `Pass is VALID`);
       }
 
-      if (config?.configurationId) {
-        log('info', `POST ${proxyUrl}/track  { barcodeValue, appConfigurationId: "${config.configurationId}" }`);
+      if (configId) {
+        log('info', `POST ${proxyUrl}/track  payload: ${JSON.stringify({ barcodeValue, appConfigurationId: configId })}`);
         try {
-          await createAppScan(barcodeValue, config.configurationId);
+          const trackResponse = await createAppScan(barcodeValue, configId);
+          log('ok', `/track response: ${JSON.stringify(trackResponse)}`);
           appScanSubmitted = true;
           log('ok', `App scan tracked ✓ — wallet pass will update`);
         } catch (e) {
