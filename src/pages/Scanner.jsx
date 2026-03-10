@@ -37,9 +37,13 @@ export default function Scanner() {
     setProcessing(true);
     setDebugLogs([]);
 
+    // Read fresh from localStorage at scan time to avoid stale closure
+    const config = getSelectedConfig();
+
     log('info', `Barcode captured: "${barcodeValue}"`);
     log('info', `Proxy URL: ${proxyUrl}`);
-    log('info', `App config: ${config?.name || '(none selected)'}`);
+    log('info', `Config raw value: ${JSON.stringify(config)}`);
+    log('info', `configurationId: ${config?.configurationId ?? '(undefined — no config stored)'}`);
 
     let scanResult = 'error';
     let passData = null;
