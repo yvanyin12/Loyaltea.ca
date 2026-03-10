@@ -116,6 +116,8 @@ export async function createAppScan(payload) {
   return proxyPost('/track', payload);
 }
 
-export async function reverseAppScan(payload) {
-  return proxyPost('/reverse', payload);
+// Deletes an App Scan by its identifier (reverses the loyalty effect).
+// Proxy must handle: POST /delete-scan { identifier } → DELETE https://app.passcreator.com/api/appscan/{identifier}
+export async function deleteAppScan(appScanIdentifier) {
+  return proxyPost('/delete-scan', { identifier: appScanIdentifier });
 }
