@@ -150,7 +150,7 @@ export default function Scanner() {
           deviceName: 'Base44 Scanner',
         };
         log('info', `POST ${proxyUrl}/track  payload: ${JSON.stringify(trackPayload)}`);
-        log('info', `scanStatus sent: ${resolvedScanStatus} (${resolvedScanStatus === 1 ? 'VALID — should trigger loyalty update' : 'INVALID — no loyalty update expected'})`);
+        log('info', `scanStatus sent: ${resolvedScanStatus} (${resolvedScanStatus === 2 ? 'VALID — attendance saved, triggers loyalty update' : resolvedScanStatus === 1 ? 'ALREADY VOIDED — no loyalty update' : 'UNKNOWN PASS — no loyalty update'})`);
         try {
           const trackResponse = await createAppScan(trackPayload);
           log('ok', `/track raw response: ${JSON.stringify(trackResponse)}`);
