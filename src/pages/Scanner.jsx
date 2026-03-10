@@ -59,7 +59,8 @@ export default function Scanner() {
     try {
       log('info', `POST ${proxyUrl}/validate  { barcodeValue: "${barcodeValue}" }`);
       const checkData = await checkPassByBarcode(barcodeValue);
-      log('ok', `Validate response: ${JSON.stringify(checkData)}`);
+      log('ok', `VALIDATE response: ${JSON.stringify(checkData)}`);
+      log('info', `  → identifier: ${checkData.identifier ?? '(missing)'}  voided: ${checkData.voided}  error: "${checkData.error || ''}"`); 
 
       const responseError = checkData.error;
       const isVoided = checkData.voided;
