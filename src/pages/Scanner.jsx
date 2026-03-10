@@ -191,7 +191,7 @@ export default function Scanner() {
           log('ok', `/track raw response: ${JSON.stringify(trackResponse)}`);
           appScanSubmitted = true;
           // Capture the appscan identifier for undo (DELETE /api/appscan/{identifier})
-          const appScanId = trackResponse?.identifier || trackResponse?.id || null;
+          appScanId = trackResponse?.identifier || trackResponse?.id || null;
           log('ok', `App scan tracked ✓ appScanId="${appScanId}" — wallet update depends on Passcreator automation`);
           if (!appScanId) log('warn', `No appscan identifier in /track response — Undo will not be able to reverse wallet effect`);
         } catch (e) {
