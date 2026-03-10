@@ -206,7 +206,94 @@ export default function Scanner() {
 
   const handleCancelScan = () => {
     setConfirmPending(null);
+    setPointsFlow(null);
     setResult(null);
+  };
+
+  const handlePointsConfirm = async (amountSpent) => {
+    if (!pointsFlow) return;
+    setPointsLoading(true);
+
+    const { passData, configId, barcodeValue, currentPoints, rewardPercent, configName } = pointsFlow;
+    const config = getSelectedConfig();
+
+    try {
+      // Calculate points earned
+      const pointsEarned = calculatePoints(amountSpent, rewardPercent);
+      const newBalance = currentPoints + pointsEarned;
+
+      log('info', `Points earned: ${pointsEarned}, New balance: ${newBalance}`);
+
+      // Submit the app scan (attendance tracking)
+      const resolvedScanStatus = 2; // attendance
+      const trackPayload = {
+        appConfigurationId: configId,
+        passId: passData?.identifier || '',
+        scanStatus: resolvedScanStatus,
+        createdOn: new Date().toISOString(),
+        scannedBarcodeValue: barcodeValue,
+        deviceName: 'Base44 Scanner',
+      };
+
+      log('info', `Submitting app scan and updating points...`);
+      let appScanId = null;
+      let appScanSubmitted = false;
+
+      try {
+        const trackResponse = await createAppScan(trackPayload);
+        appScanSubmitted = true;
+        appScanId = trackResponse?.appScanId || trackResponse?.identifier || null;
+        log('ok', `App scan tracked: ${appScanId}`);
+      } catch (e) {
+        log('error', `App scan failed: ${e.message}`);
+      }
+
+      // Update POINTS field in Passcreator
+      try {
+        await updatePointsField(proxyUrl, passData?.identifier, newBalance);
+        log('ok', `POINTS field updated to ${newBalance}`);
+      } catch (e) {
+        log('error', `Failed to update POINTS: ${e.message}`);
+      }
+
+      // Save to database
+      await base44.entities.ScanLog.create({
+        barcodeValue,
+        passIdentifier: passData?.identifier || '',
+        appConfigurationId: configId,
+        appConfigurationName: configName,
+        scanResult: 'valid',
+        isVoided: false,
+        appScanSubmitted,
+        appScanId: appScanId || '',
+        loyaltyMode: 'points',
+        amountSpent,
+        pointsEarned,
+        previousPointsBalance: currentPoints,
+        newPointsBalance: newBalance,
+        isUndone: false,
+      });
+
+      setResult({
+        status: 'valid',
+        barcodeValue,
+        passData,
+        error: '',
+        appScanSubmitted,
+        pointsData: {
+          amountSpent,
+          pointsEarned,
+          previousBalance: currentPoints,
+          newBalance,
+        },
+      });
+
+      setPointsFlow(null);
+    } catch (e) {
+      log('error', `Points flow failed: ${e.message}`);
+    }
+
+    setPointsLoading(false);
   };
 
   const handleAmountSave = async (amount) => {
