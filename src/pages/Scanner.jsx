@@ -373,7 +373,20 @@ export default function Scanner() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 gap-6">
-        {confirmPending ? (
+        {pointsFlow ? (
+          <>
+            <PointsConfirmation
+              passIdentifier={pointsFlow.passData?.identifier}
+              configName={pointsFlow.configName}
+              rewardPercent={pointsFlow.rewardPercent}
+              currentPoints={pointsFlow.currentPoints}
+              onConfirm={handlePointsConfirm}
+              onCancel={handleCancelScan}
+              loading={pointsLoading}
+            />
+            <DebugPanel logs={debugLogs} />
+          </>
+        ) : confirmPending ? (
           <>
             <ScanConfirmation
               passData={confirmPending.passData}
