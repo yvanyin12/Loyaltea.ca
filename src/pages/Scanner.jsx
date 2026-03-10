@@ -189,8 +189,10 @@ export default function Scanner() {
           const trackResponse = await createAppScan(trackPayload);
           log('ok', `/track raw response: ${JSON.stringify(trackResponse)}`);
           appScanSubmitted = true;
-          log('ok', `App scan tracked ✓ — wallet update depends on Passcreator App Configuration automation`);
-          log('info', `NOTE: No separate pass update call is made — loyalty stamp/point is applied only if the App Configuration has automation enabled in Passcreator`);
+          // Capture the appscan identifier for undo (DELETE /api/appscan/{identifier})
+          const appScanId = trackResponse?.identifier || trackResponse?.id || null;
+          log('ok', `App scan tracked ✓ appScanId="${appScanId}" — wallet update depends on Passcreator automation`);
+          if (!appScanId) log('warn', `No appscan identifier in /track response — Undo will not be able to reverse wallet effect`);
         } catch (e) {
           log('error', `App scan tracking FAILED: ${e.message}`);
         }
