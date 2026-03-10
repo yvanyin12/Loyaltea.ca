@@ -16,7 +16,7 @@ const RESULT_STYLE = {
 // Format timestamp to Montreal time (Eastern Time)
 const formatMontrealTime = (dateString) => {
   try {
-    return moment(dateString).tz('America/Toronto').format('MMM D, YYYY h:mm:ss A');
+    return moment.utc(dateString).tz('America/Toronto').format('MMM D, YYYY h:mm:ss A');
   } catch {
     return '—';
   }
@@ -44,10 +44,10 @@ export default function ScanHistory() {
   const exportCSV = () => {
     const headers = ['Date', 'Time', 'Barcode', 'Result', 'Configuration', 'Amount Spent (CAD)'];
     const rows = scans.map((s) => {
-      const date = s.created_date ? new Date(s.created_date) : null;
+      const m = s.created_date ? moment.utc(s.created_date).tz('America/Toronto') : null;
       return [
-        date ? new Intl.DateTimeFormat('en-US', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date) : '',
-        date ? new Intl.DateTimeFormat('en-US', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(date) : '',
+        m ? m.format('MM/DD/YYYY') : '',
+        m ? m.format('HH:mm:ss') : '',
         s.barcodeValue || '',
         s.scanResult || '',
         s.appConfigurationName || '',
