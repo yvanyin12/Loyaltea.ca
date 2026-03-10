@@ -15,7 +15,7 @@ import {
   getSelectedConfig,
   checkPassByBarcode,
   createAppScan,
-  reverseAppScan,
+  deleteAppScan,
 } from '../components/api/passcreatorApi';
 
 const UNDO_SECONDS = 15;
