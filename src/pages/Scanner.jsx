@@ -39,11 +39,14 @@ export default function Scanner() {
 
     // Read fresh from localStorage at scan time to avoid stale closure
     const config = getSelectedConfig();
+    // Resolve the config ID — field may be 'configurationId' or 'id' depending on API response
+    const configId = config?.configurationId || config?.id || null;
 
     log('info', `Barcode captured: "${barcodeValue}"`);
     log('info', `Proxy URL: ${proxyUrl}`);
-    log('info', `Config raw value: ${JSON.stringify(config)}`);
-    log('info', `configurationId: ${config?.configurationId ?? '(undefined — no config stored)'}`);
+    log('info', `Config raw: ${JSON.stringify(config)}`);
+    log('info', `Config keys: ${config ? Object.keys(config).join(', ') : '(null)'}`);
+    log('info', `configurationId resolved: ${configId ?? '(undefined)'}`);
 
     let scanResult = 'error';
     let passData = null;
