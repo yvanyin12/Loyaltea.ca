@@ -36,17 +36,22 @@ export default function ScanHistory() {
   const handleUndo = async (scan) => {
     if (!window.confirm('Undo this scan? This will attempt to reverse the wallet change.')) return;
     setUndoingId(scan.id);
-    try {
-      if (scan.appScanId) {
-        await deleteAppScan(scan.appScanId);
-      } else {
-        console.warn('[Undo] No appScanId on record — cannot reverse wallet effect');
-      }
-    } catch (e) {
-      console.warn('[Undo] Reverse API call failed:', e.message, '— marking as undone in app only');
+    if (!scan.appScanId) {
+      alert('Cannot undo — scan ID not available (was this scanned with an older version?)');
+      setUndoingId(null);
+      return;
     }
-    await base44.entities.ScanLog.update(scan.id, { isUndone: true });
-    setScans((prev) => prev.map((s) => s.id === scan.id ? { ...s, isUndone: true } : s));
+    let ok = false;
+    try {
+      await deleteAppScan(scan.appScanId);
+      ok = true;
+    } catch (e) {
+      alert(`Undo failed — proxy error: ${e.message}\n\nThe wallet was NOT reversed.`);
+    }
+    if (ok) {
+      await base44.entities.ScanLog.update(scan.id, { isUndone: true });
+      setScans((prev) => prev.map((s) => s.id === scan.id ? { ...s, isUndone: true } : s));
+    }
     setUndoingId(null);
   };
 
