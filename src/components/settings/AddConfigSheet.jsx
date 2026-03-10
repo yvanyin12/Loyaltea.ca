@@ -71,17 +71,54 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
 
   const isAlreadySaved = (id) => savedConfigs.some((c) => c.configurationId === id);
 
-  // ── Shared UUID extractor + matcher ─────────────────────────────
+  // ── Shared UUID extractor + matcher (with debug) ─────────────────
   const extractAndMatch = async (raw) => {
-    const uuidMatch = raw.match(
-      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
-    );
-    if (!uuidMatch) throw new Error('No valid configuration identifier found.');
+    const logs = [];
+    const log = (msg) => { console.log('[ConfigImport]', msg); logs.push(msg); };
+
+    log(`RAW INPUT (${raw.length} chars): "${raw}"`);
+
+    // Try UUID pattern
+    const uuidMatch = raw.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    log(`UUID regex match: ${uuidMatch ? `"${uuidMatch[0]}"` : 'NO MATCH'}`);
+
+    if (!uuidMatch) {
+      // Show all chars to help diagnose encoding issues
+      const charCodes = Array.from(raw.slice(0, 80)).map(c => c.charCodeAt(0));
+      log(`First 80 char codes: [${charCodes.join(',')}]`);
+      throw Object.assign(new Error('No valid configuration identifier found.'), { debugLogs: logs });
+    }
+
     const uuid = uuidMatch[0];
+    log(`Extracted UUID: "${uuid}"`);
+    log(`Fetching configurations from proxy…`);
+
     const data = await fetchConfigurations();
-    const match = Array.isArray(data) ? data.find((c) => c.configurationId === uuid) : null;
-    if (!match) throw new Error(`No configuration matched the identifier: ${uuid}`);
-    return match;
+    const list = Array.isArray(data) ? data : [];
+    log(`Configurations received: ${list.length}`);
+
+    list.forEach((c, i) => {
+      const keys = Object.keys(c).join(', ');
+      log(`  [${i}] keys: ${keys}`);
+      log(`  [${i}] configurationId: "${c.configurationId}" | name: "${c.name}"`);
+    });
+
+    log(`Matching uuid "${uuid}" against configurationId field…`);
+    const match = list.find((c) => c.configurationId === uuid);
+
+    if (!match) {
+      const ids = list.map((c) => `"${c.configurationId}"`).join(', ');
+      log(`NO MATCH. Available IDs: [${ids || 'none'}]`);
+      // Also try loose match in case field name differs
+      const looseMatch = list.find((c) =>
+        Object.values(c).some((v) => typeof v === 'string' && v.toLowerCase() === uuid.toLowerCase())
+      );
+      log(`Loose match (any field): ${looseMatch ? `"${looseMatch.name}"` : 'none'}`);
+      throw Object.assign(new Error(`No configuration matched identifier "${uuid}"`), { debugLogs: logs });
+    }
+
+    log(`MATCHED: "${match.name}" (${match.configurationId})`);
+    return { ...match, _debugLogs: logs };
   };
 
   // ── QR tab handlers ──────────────────────────────────────────────
