@@ -105,7 +105,7 @@ export default function Scanner() {
     }
 
     try {
-      await base44.entities.ScanLog.create({
+      const created = await base44.entities.ScanLog.create({
         barcodeValue,
         passIdentifier: passData?.identifier || '',
         appConfigurationId: configId || '',
@@ -114,7 +114,12 @@ export default function Scanner() {
         isVoided: passData?.voided || false,
         appScanSubmitted,
         errorMessage: errorMsg,
+        isUndone: false,
       });
+      if (scanResult === 'valid' && created?.id) {
+        setPendingScanId(created.id);
+        setShowAmountInput(true);
+      }
     } catch (_) {}
 
     setResult({
@@ -125,6 +130,21 @@ export default function Scanner() {
       appScanSubmitted,
     });
     setProcessing(false);
+  };
+
+  const handleAmountSave = async (amount) => {
+    if (pendingScanId) {
+      try {
+        await base44.entities.ScanLog.update(pendingScanId, { amountSpent: amount });
+      } catch (_) {}
+    }
+    setShowAmountInput(false);
+    setPendingScanId(null);
+  };
+
+  const handleAmountSkip = () => {
+    setShowAmountInput(false);
+    setPendingScanId(null);
   };
 
   const handleManualSubmit = () => {
