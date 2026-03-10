@@ -302,6 +302,7 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
                     <p>{linkError}</p>
                   </div>
                 )}
+                {linkDebugLogs.length > 0 && <DebugLog logs={linkDebugLogs} />}
               </>
             ) : (
               <>
