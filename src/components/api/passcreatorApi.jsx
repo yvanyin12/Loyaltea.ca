@@ -1,50 +1,25 @@
 /**
  * Passcreator API — Proxy-based client
  *
- * All requests go through YOUR proxy server, never directly to app.passcreator.com.
- * This avoids CORS issues and keeps the Passcreator API key off the browser.
+ * All requests go through the Cloudflare Worker proxy.
+ * The Worker injects the Authorization header — no API key needed in the frontend.
  *
- * ─────────────────────────────────────────────────────────────────
- * PROXY CONTRACT  (implement these 3 endpoints on your server)
- * ─────────────────────────────────────────────────────────────────
- *
- * 1. LOAD APP CONFIGURATIONS
- *    POST {PROXY_URL}/configs
- *    Body:     { apiKey: string }
- *    Response: Array of Passcreator App Configuration objects
- *              [ { configurationId, name, passTemplateName, scanMode, ... } ]
- *
- * 2. VALIDATE PASS
- *    POST {PROXY_URL}/validate
- *    Body:     { barcodeValue: string, apiKey: string }
- *    Response: {
- *                scanResult: "valid" | "already_voided" | "unknown",
- *                passIdentifier: string | null,
- *                voided: boolean,
- *                passTemplateGuid: string | null,
- *                error: string  // empty string if no error
- *              }
- *
- * 3. TRACK SCAN (App Scan)
- *    POST {PROXY_URL}/track
- *    Body:     { barcodeValue: string, appConfigurationId: string, apiKey: string }
- *    Response: { submitted: boolean }
- *
- * ─────────────────────────────────────────────────────────────────
- * Your proxy should:
- *  - Accept the apiKey from the request body
- *  - Forward the real request to app.passcreator.com with Authorization: apiKey
- *  - Return the response in the shape above
- * ─────────────────────────────────────────────────────────────────
+ * PROXY CONTRACT (endpoints on the Worker)
+ * ─────────────────────────────────────────
+ * POST /configs   body: {}                            → Array of App Configuration objects
+ * POST /validate  body: { barcodeValue }              → { voided, identifier, error, ... }
+ * POST /track     body: { barcodeValue, appConfigurationId } → { submitted: boolean }
  */
+
+const DEFAULT_PROXY_URL = 'https://square-bush-df0f.yvanyin123.workers.dev';
 
 // ── Local storage helpers ────────────────────────────────────────
 
-export const getApiKey      = () => localStorage.getItem('pc_api_key') || '';
-export const setApiKey      = (key) => localStorage.setItem('pc_api_key', key);
+export const getProxyUrl = () =>
+  localStorage.getItem('pc_proxy_url') || DEFAULT_PROXY_URL;
 
-export const getProxyUrl    = () => localStorage.getItem('pc_proxy_url') || '';
-export const setProxyUrl    = (url) => localStorage.setItem('pc_proxy_url', url.replace(/\/$/, ''));
+export const setProxyUrl = (url) =>
+  localStorage.setItem('pc_proxy_url', url.replace(/\/$/, ''));
 
 export const getSelectedConfig = () => {
   try { return JSON.parse(localStorage.getItem('pc_config') || 'null'); }
@@ -57,8 +32,6 @@ export const setSelectedConfig = (config) =>
 
 async function proxyPost(path, body) {
   const proxyUrl = getProxyUrl();
-  if (!proxyUrl) throw new Error('No proxy URL configured. Set it in Settings.');
-
   const fullUrl = `${proxyUrl}${path}`;
   console.debug('[Passcreator Proxy] POST', fullUrl, body);
 
@@ -79,17 +52,14 @@ async function proxyPost(path, body) {
 
 // ── Public API ───────────────────────────────────────────────────
 
-export async function fetchConfigurations(apiKey) {
-  // POST {PROXY_URL}/configs   body: { apiKey }
-  return proxyPost('/configs', { apiKey });
+export async function fetchConfigurations() {
+  return proxyPost('/configs', {});
 }
 
-export async function checkPassByBarcode(barcodeValue, apiKey) {
-  // POST {PROXY_URL}/validate   body: { barcodeValue, apiKey }
-  return proxyPost('/validate', { barcodeValue, apiKey });
+export async function checkPassByBarcode(barcodeValue) {
+  return proxyPost('/validate', { barcodeValue });
 }
 
-export async function createAppScan(barcodeValue, appConfigurationId, apiKey) {
-  // POST {PROXY_URL}/track   body: { barcodeValue, appConfigurationId, apiKey }
-  return proxyPost('/track', { barcodeValue, appConfigurationId, apiKey });
+export async function createAppScan(barcodeValue, appConfigurationId) {
+  return proxyPost('/track', { barcodeValue, appConfigurationId });
 }
