@@ -1,8 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Settings } from 'lucide-react';
 
-export default function ConfigList({ configs, onSetActive, onRemove }) {
+export default function ConfigList({ configs, onSetActive, onRemove, onEdit }) {
   if (configs.length === 0) {
     return (
       <p className="text-slate-500 text-sm text-center py-6">
@@ -44,6 +44,11 @@ export default function ConfigList({ configs, onSetActive, onRemove }) {
                   Template: {cfg.passTemplateName}
                 </p>
               )}
+              {cfg.rewardPercent != null && (
+                <p className="text-xs text-blue-400 mt-0.5">
+                  Reward: {(cfg.rewardPercent * 100).toFixed(0)}%
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-1 shrink-0">
@@ -57,6 +62,14 @@ export default function ConfigList({ configs, onSetActive, onRemove }) {
                   Set Active
                 </Button>
               )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onEdit(cfg)}
+                className="text-slate-500 hover:text-blue-400 h-7 w-7 p-0"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </Button>
               <Button
                 size="sm"
                 variant="ghost"
