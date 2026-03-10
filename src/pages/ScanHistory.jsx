@@ -16,6 +16,7 @@ const RESULT_STYLE = {
 export default function ScanHistory() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [undoingId, setUndoingId] = useState(null);
 
   const loadScans = async () => {
     setLoading(true);
