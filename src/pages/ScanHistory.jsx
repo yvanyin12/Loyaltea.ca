@@ -14,15 +14,22 @@ const RESULT_STYLE = {
 
 // Format timestamp to Montreal time (Eastern Time)
 const formatMontrealTime = (dateString) => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Toronto',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Toronto',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(date);
+  } catch {
+    return '—';
+  }
 };
 
 export default function ScanHistory() {
