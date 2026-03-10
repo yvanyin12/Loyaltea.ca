@@ -88,24 +88,25 @@ export default function Scanner() {
     log('info', `[UNDO] appConfigurationId="${snap.appConfigurationId}"`);
     log('info', `[UNDO] scannedBarcodeValue="${snap.barcodeValue}"`);
     log('info', `[UNDO] original scanStatus=${snap.scanStatus}`);
+    log('info', `[UNDO] appScanId (Passcreator)="${snap.appScanId ?? '(missing)'}"`);
     log('info', `[UNDO] amountSpent=${snap.amountSpent ?? '(not entered)'}`);
 
-    const reversePayload = {
-      appConfigurationId: snap.appConfigurationId,
-      passId: snap.passIdentifier,
-      scannedBarcodeValue: snap.barcodeValue,
-    };
+    if (!snap.appScanId) {
+      log('error', `[UNDO FAILED] Cannot undo — appScanId was not captured from /track response. The proxy must return the scan identifier so we can call DELETE /api/appscan/{id}.`);
+      setUndoLoading(false);
+      setUndoMessage({ type: 'error', text: 'Undo failed — scan ID not available (see debug log)' });
+      return;
+    }
 
-    // ── Undo request ──────────────────────────────────────────────
-    log('info', `[UNDO] UNDO REQUEST PAYLOAD: ${JSON.stringify(reversePayload)}`);
-    log('info', `[UNDO] Uses same passId: ${reversePayload.passId === snap.passIdentifier}`);
-    log('info', `[UNDO] Uses same appConfigurationId: ${reversePayload.appConfigurationId === snap.appConfigurationId}`);
-    log('info', `[UNDO] Does NOT send a negative value — reversal is handled server-side by Passcreator /reverse`);
-    log('info', `[UNDO] Does NOT create a second App Scan — calls /reverse, not /track`);
+    // Passcreator undo = DELETE /api/appscan/{identifier}
+    // Proxy must handle: POST /delete-scan { identifier } → DELETE https://app.passcreator.com/api/appscan/{identifier}
+    const deletePayload = { identifier: snap.appScanId };
+    log('info', `[UNDO] UNDO REQUEST PAYLOAD: ${JSON.stringify(deletePayload)}`);
+    log('info', `[UNDO] Method: proxy POST /delete-scan → DELETE https://app.passcreator.com/api/appscan/${snap.appScanId}`);
 
     let reverseOk = false;
     try {
-      const reverseResponse = await reverseAppScan(reversePayload);
+      const reverseResponse = await deleteAppScan(snap.appScanId);
       log('ok', `[UNDO] UNDO RESPONSE: ${JSON.stringify(reverseResponse)}`);
       reverseOk = true;
     } catch (e) {
