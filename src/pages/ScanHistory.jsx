@@ -37,11 +37,11 @@ export default function ScanHistory() {
     if (!window.confirm('Undo this scan? This will attempt to reverse the wallet change.')) return;
     setUndoingId(scan.id);
     try {
-      await reverseAppScan({
-        appConfigurationId: scan.appConfigurationId,
-        passId: scan.passIdentifier,
-        scannedBarcodeValue: scan.barcodeValue,
-      });
+      if (scan.appScanId) {
+        await deleteAppScan(scan.appScanId);
+      } else {
+        console.warn('[Undo] No appScanId on record — cannot reverse wallet effect');
+      }
     } catch (e) {
       console.warn('[Undo] Reverse API call failed:', e.message, '— marking as undone in app only');
     }
