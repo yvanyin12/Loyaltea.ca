@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, XCircle, AlertCircle, Wifi, Trash2, RefreshCw, Download, Undo2, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Wifi, Trash2, RefreshCw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import RevenueStats from '../components/history/RevenueStats';
-import { deleteAppScan } from '../components/api/passcreatorApi';
 
 const RESULT_STYLE = {
-  valid: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-950/40 border-emerald-800', label: 'Valid' },
+  valid: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-950/40 border-emerald-800', label: 'Confirmed' },
   already_voided: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-950/40 border-red-800', label: 'Already Used' },
   unknown: { icon: AlertCircle, color: 'text-amber-400', bg: 'bg-amber-950/30 border-amber-800', label: 'Unknown' },
   error: { icon: Wifi, color: 'text-slate-400', bg: 'bg-slate-800/50 border-slate-700', label: 'Error' },
@@ -16,7 +15,6 @@ const RESULT_STYLE = {
 export default function ScanHistory() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [undoingId, setUndoingId] = useState(null);
 
   const loadScans = async () => {
     setLoading(true);
@@ -31,28 +29,6 @@ export default function ScanHistory() {
     if (!window.confirm('Clear all scan history?')) return;
     await Promise.all(scans.map((s) => base44.entities.ScanLog.delete(s.id)));
     setScans([]);
-  };
-
-  const handleUndo = async (scan) => {
-    if (!window.confirm('Undo this scan? This will attempt to reverse the wallet change.')) return;
-    setUndoingId(scan.id);
-    if (!scan.appScanId) {
-      alert('Cannot undo — scan ID not available (was this scanned with an older version?)');
-      setUndoingId(null);
-      return;
-    }
-    let ok = false;
-    try {
-      await deleteAppScan(scan.appScanId);
-      ok = true;
-    } catch (e) {
-      alert(`Undo failed — proxy error: ${e.message}\n\nThe wallet was NOT reversed.`);
-    }
-    if (ok) {
-      await base44.entities.ScanLog.update(scan.id, { isUndone: true });
-      setScans((prev) => prev.map((s) => s.id === scan.id ? { ...s, isUndone: true } : s));
-    }
-    setUndoingId(null);
   };
 
   const exportCSV = () => {
@@ -128,14 +104,14 @@ export default function ScanHistory() {
               return (
                 <div
                   key={scan.id}
-                  className={`rounded-xl border p-3 ${undone ? 'opacity-50 bg-slate-800/30 border-slate-700' : style.bg}`}
+                  className={`rounded-xl border p-3 ${style.bg}`}
                 >
                   <div className="flex gap-3 items-start">
-                    <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${undone ? 'text-slate-500' : style.color}`} />
+                    <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${style.color}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className={`text-sm font-semibold ${undone ? 'text-slate-500 line-through' : style.color}`}>
-                          {style.label}{undone && ' (Undone)'}
+                        <span className={`text-sm font-semibold ${style.color}`}>
+                          {style.label}
                         </span>
                         <span className="text-slate-500 text-xs whitespace-nowrap">
                           {scan.created_date ? format(new Date(scan.created_date), 'MMM d, HH:mm') : '—'}
@@ -146,7 +122,7 @@ export default function ScanHistory() {
                         <p className="text-slate-500 text-xs mt-0.5">{scan.appConfigurationName}</p>
                       )}
                       {scan.amountSpent != null && scan.amountSpent > 0 && (
-                        <p className={`text-xs mt-1 font-semibold ${undone ? 'text-slate-500' : 'text-emerald-400'}`}>
+                        <p className="text-xs mt-1 font-semibold text-emerald-400">
                           €{Number(scan.amountSpent).toFixed(2)}
                         </p>
                       )}
@@ -154,19 +130,7 @@ export default function ScanHistory() {
                         <p className="text-red-400/70 text-xs mt-1 line-clamp-2">{scan.errorMessage}</p>
                       )}
                     </div>
-                    {!undone && (
-                      <button
-                        onClick={() => handleUndo(scan)}
-                        disabled={undoingId === scan.id}
-                        className="text-slate-600 hover:text-amber-400 transition-colors p-1 ml-1 flex-shrink-0 disabled:opacity-50"
-                        title="Undo this scan"
-                      >
-                        {undoingId === scan.id
-                          ? <Loader2 className="w-4 h-4 animate-spin" />
-                          : <Undo2 className="w-4 h-4" />
-                        }
-                      </button>
-                    )}
+
                   </div>
                 </div>
               );
