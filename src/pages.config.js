@@ -49,12 +49,14 @@
  */
 import ScanHistory from './pages/ScanHistory';
 import Settings from './pages/Settings';
+import Scanner from './pages/Scanner';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "ScanHistory": ScanHistory,
     "Settings": Settings,
+    "Scanner": Scanner,
 }
 
 export const pagesConfig = {
