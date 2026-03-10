@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,16 @@ import QRScanner from '../components/scanner/QRScanner';
 import ScanResult from '../components/scanner/ScanResult';
 import DebugPanel from '../components/scanner/DebugPanel';
 import AmountInput from '../components/scanner/AmountInput';
+import UndoBar from '../components/scanner/UndoBar';
 import {
   getProxyUrl,
   getSelectedConfig,
   checkPassByBarcode,
   createAppScan,
+  reverseAppScan,
 } from '../components/api/passcreatorApi';
+
+const UNDO_SECONDS = 12;
 
 export default function Scanner() {
   const [mode, setMode] = useState('camera');
