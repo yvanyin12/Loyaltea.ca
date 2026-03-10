@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import QRScanner from '../components/scanner/QRScanner';
 import ScanResult from '../components/scanner/ScanResult';
 import DebugPanel from '../components/scanner/DebugPanel';
 import AmountInput from '../components/scanner/AmountInput';
-import UndoBar from '../components/scanner/UndoBar';
+import UndoTimer from '../components/scanner/UndoTimer';
 import {
   getProxyUrl,
   getSelectedConfig,
@@ -17,8 +17,6 @@ import {
   createAppScan,
   reverseAppScan,
 } from '../components/api/passcreatorApi';
-
-const UNDO_SECONDS = 12;
 
 export default function Scanner() {
   const [mode, setMode] = useState('camera');
@@ -28,15 +26,10 @@ export default function Scanner() {
   const [scanKey, setScanKey] = useState(0);
   const [debugLogs, setDebugLogs] = useState([]);
   const [pendingScanId, setPendingScanId] = useState(null);
+  const [pendingScanData, setPendingScanData] = useState(null);
   const [showAmountInput, setShowAmountInput] = useState(false);
-
-  // Undo state
-  const [undoCountdown, setUndoCountdown] = useState(0);
-  const [undoLoading, setUndoLoading] = useState(false);
-  const [undoMessage, setUndoMessage] = useState(null); // { type: 'success'|'error', text }
-  const undoTimerRef = useRef(null);
-  // snapshot of the last scan for undo
-  const lastScanRef = useRef(null);
+  const [showUndoTimer, setShowUndoTimer] = useState(false);
+  const [undoneMessage, setUndoneMessage] = useState(null);
 
   const proxyUrl = getProxyUrl();
 
@@ -45,54 +38,6 @@ export default function Scanner() {
       `[Scanner] ${message}`
     );
     setDebugLogs((prev) => [...prev, { level, message }]);
-  };
-
-  // Start countdown after a successful scan
-  const startUndoCountdown = (scanSnapshot) => {
-    lastScanRef.current = scanSnapshot;
-    setUndoMessage(null);
-    setUndoCountdown(UNDO_SECONDS);
-    clearInterval(undoTimerRef.current);
-    undoTimerRef.current = setInterval(() => {
-      setUndoCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(undoTimerRef.current);
-          lastScanRef.current = null;
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const handleUndo = async () => {
-    if (!window.confirm('Undo this scan? This will reverse the loyalty change on the wallet.')) return;
-    clearInterval(undoTimerRef.current);
-    setUndoCountdown(0);
-    setUndoLoading(true);
-
-    const snap = lastScanRef.current;
-    lastScanRef.current = null;
-
-    try {
-      await reverseAppScan({
-        appConfigurationId: snap.appConfigurationId,
-        passId: snap.passIdentifier,
-        scannedBarcodeValue: snap.barcodeValue,
-      });
-    } catch (e) {
-      log('warn', `[Undo] Reverse API failed: ${e.message} — marking undone in app only`);
-    }
-
-    try {
-      await base44.entities.ScanLog.update(snap.scanLogId, { isUndone: true });
-    } catch (e) {
-      log('warn', `[Undo] Failed to mark scan as undone: ${e.message}`);
-    }
-
-    setUndoLoading(false);
-    setUndoMessage({ type: 'success', text: 'Scan undone successfully' });
-    setTimeout(() => setUndoMessage(null), 4000);
   };
 
   const handleScan = async (barcodeValue) => {
@@ -183,6 +128,7 @@ export default function Scanner() {
       });
       if (scanResult === 'valid' && created?.id) {
         setPendingScanId(created.id);
+        setPendingScanData({ configId, barcodeValue, passIdentifier: passData?.identifier || '' });
         setShowAmountInput(true);
       }
     } catch (_) {}
