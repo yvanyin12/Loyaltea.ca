@@ -152,10 +152,14 @@ export default function ScanHistory() {
                     {!undone && (
                       <button
                         onClick={() => handleUndo(scan)}
-                        className="text-slate-600 hover:text-amber-400 transition-colors p-1 ml-1 flex-shrink-0"
+                        disabled={undoingId === scan.id}
+                        className="text-slate-600 hover:text-amber-400 transition-colors p-1 ml-1 flex-shrink-0 disabled:opacity-50"
                         title="Undo this scan"
                       >
-                        <Undo2 className="w-4 h-4" />
+                        {undoingId === scan.id
+                          ? <Loader2 className="w-4 h-4 animate-spin" />
+                          : <Undo2 className="w-4 h-4" />
+                        }
                       </button>
                     )}
                   </div>
