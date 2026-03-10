@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, AlertCircle, RotateCcw, Wifi } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, RotateCcw, Wifi, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
@@ -80,6 +80,25 @@ export default function ScanResult({ result, onReset }) {
 
       {result.status === 'error' && result.error && (
         <p className="text-slate-500 text-xs">{result.error}</p>
+      )}
+
+      {result.pointsData && (
+        <div className="bg-blue-950/50 border border-blue-800 rounded-xl p-4 space-y-2 text-left">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-300">Amount Spent</span>
+            <span className="text-white font-mono font-semibold">${result.pointsData.amountSpent.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm border-t border-blue-800 pt-2">
+            <span className="text-blue-300 font-semibold flex items-center gap-1">
+              <Zap className="w-4 h-4" /> Points Earned
+            </span>
+            <span className="text-blue-300 font-mono font-semibold">{result.pointsData.pointsEarned.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm border-t border-blue-800 pt-2">
+            <span className="text-emerald-300 font-semibold">New Balance</span>
+            <span className="text-emerald-300 font-mono font-semibold">{result.pointsData.newBalance.toLocaleString()}</span>
+          </div>
+        </div>
       )}
 
       <Button
