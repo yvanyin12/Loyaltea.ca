@@ -136,6 +136,7 @@ export async function undoStampsScan(originalScan) {
  * 1. Reverts the stored value in Passcreator to previousPointsBalance.
  * 2. Deletes the app scan record (best-effort).
  * 3. Creates an audit reversal record with negative points/amount.
+ * 4. Refetches pass details to ensure fresh state.
  */
 export async function undoPointsScan(originalScan) {
   const proxyUrl = getProxyUrl();
@@ -160,7 +161,18 @@ export async function undoPointsScan(originalScan) {
     }
   }
 
-  // 3. Create reversal audit record
+  // 3. Refetch pass details to confirm updated state
+  if (originalScan.passIdentifier) {
+    try {
+      const verifyData = await fetchPassDetails(originalScan.passIdentifier);
+      const pointsVerified = parseInt(verifyData?.storedValue ?? 0, 10);
+      console.log('[Undo Points] Verification: point balance now =', pointsVerified);
+    } catch (e) {
+      console.warn('[Undo Points] Could not verify final point balance:', e.message);
+    }
+  }
+
+  // 4. Create reversal audit record
   return finalizeUndo(originalScan, {
     loyaltyMode: 'points',
     amountSpent:
