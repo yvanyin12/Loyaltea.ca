@@ -59,24 +59,14 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
           <p className="text-slate-400 text-xs mt-1 font-mono">{config.configurationId}</p>
         </div>
 
-        {/* Loyalty Type */}
+        {/* Loyalty Type — locked, not editable */}
         <div className="space-y-2 border-t border-slate-800 pt-4">
           <Label className="text-slate-300 text-sm font-medium">Loyalty Type</Label>
-          <p className="text-slate-500 text-xs">Select whether this configuration uses Points or Stamps.</p>
-          <div className="flex gap-2">
-            {['points', 'stamps'].map((type) => (
-              <button
-                key={type}
-                onClick={() => handleLoyaltyTypeChange(type)}
-                className={`flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition-all ${
-                  loyaltyType === type
-                    ? type === 'points' ? 'bg-blue-600 text-white' : 'bg-amber-600 text-white'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </button>
-            ))}
+          <p className="text-slate-500 text-xs">This configuration's loyalty type is fixed.</p>
+          <div className={`w-full py-2 rounded-lg text-sm font-semibold text-center ${
+            isStamps ? 'bg-amber-600/20 text-amber-400 border border-amber-600/40' : 'bg-blue-600/20 text-blue-400 border border-blue-600/40'
+          }`}>
+            {isStamps ? 'Stamps' : 'Points'}
           </div>
         </div>
 
