@@ -121,11 +121,10 @@ export async function undoStampsScan(originalScan) {
   const proxyUrl = getProxyUrl();
   const submitTime = performance.now();
 
-  console.log(`[Undo Stamps] ── BEGIN at ${submitTime.toFixed(0)}ms ──────────────────────────`);
-  console.log('[Undo Stamps] originalScan:', JSON.stringify(originalScan, null, 2));
-  console.log('[Undo Stamps] loyaltyMode: stamps');
-  console.log('[Undo Stamps] appScanId:', originalScan.appScanId);
-  console.log('[Undo Stamps] passIdentifier:', originalScan.passIdentifier);
+  console.log(`\n[Phone API] ═══════════════════════════════════════════════════════════`);
+  console.log(`[Phone API] STAMPS UNDO REQUEST at ${submitTime.toFixed(0)}ms`);
+  console.log(`[Phone API] Pass ID: ${originalScan.passIdentifier}`);
+  console.log(`[Phone API] App Scan ID: ${originalScan.appScanId}`);
 
   let stampsBefore = null;
   let stampsAfter = null;
@@ -133,50 +132,52 @@ export async function undoStampsScan(originalScan) {
   // 1. Fetch current stamp count and decrement by 1
   if (originalScan.passIdentifier) {
     const fetchStartTime = performance.now();
-    console.log(`[Undo Stamps] Fetching current pass details at ${fetchStartTime.toFixed(0)}ms...`);
+    console.log(`[Phone API] [Step 1] Fetching current stamp count at ${fetchStartTime.toFixed(0)}ms...`);
     const passData = await fetchPassDetails(originalScan.passIdentifier);
     const fetchEndTime = performance.now();
     stampsBefore = parseInt(passData?.storedValue ?? 0, 10);
-    console.log(`[Undo Stamps] Fetched at ${fetchEndTime.toFixed(0)}ms (${(fetchEndTime - fetchStartTime).toFixed(0)}ms): stampsBefore = ${stampsBefore}`);
+    console.log(`[Phone API] [Step 1] Response at ${fetchEndTime.toFixed(0)}ms (${(fetchEndTime - fetchStartTime).toFixed(0)}ms)`);
+    console.log(`[Phone API] [Step 1] RAW PASS DATA:`, JSON.stringify(passData, null, 2));
+    console.log(`[Phone API] [Step 1] Parsed stampsBefore: ${stampsBefore}`);
 
     stampsAfter = Math.max(0, stampsBefore - 1);
-    console.log(`[Undo Stamps] Target after undo: ${stampsAfter}`);
-    console.log(`[Undo Stamps] Sending /update-stored-value at ${performance.now().toFixed(0)}ms...`);
-
+    console.log(`[Phone API] [Step 1] Calculated stampsAfter: ${stampsAfter}`);
+    
     const updateStartTime = performance.now();
+    console.log(`[Phone API] [Step 2] Sending UPDATE to Passcreator at ${updateStartTime.toFixed(0)}ms...`);
     const updateResult = await updateStoredValue(proxyUrl, originalScan.passIdentifier, stampsAfter);
     const updateEndTime = performance.now();
-    console.log(`[Undo Stamps] Passcreator confirmed undo at ${updateEndTime.toFixed(0)}ms (${(updateEndTime - updateStartTime).toFixed(0)}ms request time)`);
-    console.log('[Undo Stamps] /update-stored-value response:', JSON.stringify(updateResult));
+    console.log(`[Phone API] [Step 2] UPDATE confirmed at ${updateEndTime.toFixed(0)}ms (${(updateEndTime - updateStartTime).toFixed(0)}ms)`);
+    console.log(`[Phone API] [Step 2] Passcreator response:`, JSON.stringify(updateResult));
   } else {
-    console.warn('[Undo Stamps] No passIdentifier on scan — cannot update stamp count in provider!');
+    console.warn('[Phone API] No passIdentifier!');
   }
 
   // 2. Best-effort delete the app scan record
   if (originalScan.appScanId) {
     const deleteStartTime = performance.now();
-    console.log(`[Undo Stamps] Deleting app scan at ${deleteStartTime.toFixed(0)}ms...`);
+    console.log(`[Phone API] [Step 3] Deleting app scan at ${deleteStartTime.toFixed(0)}ms...`);
     try {
       const deleteResult = await deleteAppScan(originalScan.appScanId);
       const deleteEndTime = performance.now();
-      console.log(`[Undo Stamps] Delete confirmed at ${deleteEndTime.toFixed(0)}ms (${(deleteEndTime - deleteStartTime).toFixed(0)}ms)`);
+      console.log(`[Phone API] [Step 3] Delete confirmed at ${deleteEndTime.toFixed(0)}ms (${(deleteEndTime - deleteStartTime).toFixed(0)}ms)`);
     } catch (e) {
-      console.warn('[Undo Stamps] delete-scan failed (non-fatal):', e.message);
+      console.warn('[Phone API] [Step 3] Delete failed (non-fatal):', e.message);
     }
   }
 
   // 3. Poll for updated value until it matches expected state or timeout
   let pollResult = null;
   if (originalScan.passIdentifier && stampsAfter !== null) {
-    console.log(`[Undo Stamps] Starting polling cycle at ${performance.now().toFixed(0)}ms...`);
     pollResult = await pollPassDetailsUntilUpdated(originalScan.passIdentifier, stampsAfter, 5, 1000);
-    console.log(`[Undo Stamps] Poll result:`, JSON.stringify(pollResult));
   }
 
   const finalTime = performance.now();
   const totalElapsed = finalTime - submitTime;
-  console.log(`[Undo Stamps] ── COMPLETE at ${finalTime.toFixed(0)}ms (${totalElapsed.toFixed(0)}ms total) ──`);
-  console.log(`[Undo Stamps] stamps: ${stampsBefore} → ${stampsAfter}`);
+  console.log(`\n[Phone API] ═══════════════════════════════════════════════════════════`);
+  console.log(`[Phone API] UNDO COMPLETE: ${stampsBefore} → ${stampsAfter} in ${totalElapsed.toFixed(0)}ms`);
+  console.log(`[Phone API] Poll result: ${pollResult?.success ? '✓ SUCCESS' : '✗ FAILED'}`);
+  console.log(`[Phone API] Now returning to UI layer for state update...`);
 
   return finalizeUndo(originalScan, {
     loyaltyMode: 'stamps',
