@@ -92,10 +92,22 @@ export default function Scanner() {
       } else {
         scanResult = 'valid';
         passData = checkData;
-        log('ok', `Pass is VALID`);
-        log('info', `passData.identifier: "${checkData.identifier}"`);
-        log('info', `passData.storedValue: ${JSON.stringify(checkData.storedValue)}`);
-        log('info', `passData keys: ${Object.keys(checkData).join(', ')}`);
+        log('ok', `Pass is VALID — identifier: "${checkData.identifier}"`);
+        log('info', `/validate storedValue: ${JSON.stringify(checkData.storedValue)} (may be absent)`);
+
+        // /validate may not return storedValue — fetch full pass details to get it
+        log('info', `Fetching full pass details for "${checkData.identifier}"...`);
+        try {
+          const fullPass = await fetchPassDetails(checkData.identifier);
+          log('ok', `Full pass details: ${JSON.stringify(fullPass)}`);
+          log('info', `storedValue from full pass: ${JSON.stringify(fullPass.storedValue)}`);
+          // Merge storedValue into passData
+          passData = { ...checkData, ...fullPass };
+        } catch (e) {
+          log('error', `Failed to fetch full pass details: ${e.message}`);
+          // Continue with what we have from /validate
+        }
+        log('info', `Final passData.storedValue: ${JSON.stringify(passData.storedValue)}`);
       }
     } catch (err) {
       scanResult = 'error';
