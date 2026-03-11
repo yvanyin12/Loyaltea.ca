@@ -321,6 +321,8 @@ export default function Scanner() {
     const { passData, configId, barcodeValue, scanMode } = confirmPending;
     const config = getSelectedConfig();
 
+    log('info', `[CONFIRMED] Submitting scan to Passcreator...`);
+
     const resolvedScanStatus = scanMode === 0 ? 0 : 2; // 0 = void, 2 = attendance
     const trackPayload = {
       appConfigurationId: configId,
@@ -331,22 +333,26 @@ export default function Scanner() {
       deviceName: 'Base44 Scanner',
     };
 
+    log('info', `POST ${proxyUrl}/track  payload: ${JSON.stringify(trackPayload)}`);
+
     let appScanSubmitted = false;
     let appScanId = null;
     let errorMsg = '';
 
     try {
       const trackResponse = await createAppScan(trackPayload);
+      log('ok', `/track raw response: ${JSON.stringify(trackResponse)}`);
       appScanSubmitted = true;
       appScanId = trackResponse?.appScanId || trackResponse?.identifier || trackResponse?.id || null;
-      log('ok', `App scan tracked`);
+      log('ok', `App scan tracked ✓ appScanId="${appScanId}"`);
     } catch (e) {
-      log('error', `App scan failed: ${e.message}`);
+      log('error', `App scan tracking FAILED: ${e.message}`);
       errorMsg = e.message;
     }
 
     // Save to database
     try {
+      log('info', `[STAMPS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
       const created = await base44.entities.ScanLog.create({
         barcodeValue,
         passIdentifier: passData?.identifier || '',
