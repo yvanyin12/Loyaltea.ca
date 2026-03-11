@@ -1,5 +1,7 @@
-import { CheckCircle2, XCircle, AlertCircle, Wifi } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Wifi, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import moment from 'moment-timezone';
+import { isUndoable } from '../api/undoApi';
 
 const RESULT_STYLE = {
   valid: {
@@ -36,12 +38,17 @@ const formatTime = (dateString) => {
   }
 };
 
-export default function ScanCard({ scan }) {
+export default function ScanCard({ scan, onUndo }) {
   const style = RESULT_STYLE[scan.scanResult] || RESULT_STYLE.error;
   const Icon = style.icon;
+  const undoable = isUndoable(scan);
 
   return (
-    <div className={`rounded-xl border p-3 transition-opacity ${style.bg}`}>
+    <div
+      className={`rounded-xl border p-3 transition-opacity ${style.bg} ${
+        scan.isUndone ? 'opacity-40' : ''
+      }`}
+    >
       <div className="flex gap-3 items-start">
         <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${style.color}`} />
 
@@ -52,11 +59,34 @@ export default function ScanCard({ scan }) {
               <span className={`text-sm font-semibold ${style.color}`}>
                 {style.label}
               </span>
+              {scan.isReversal && (
+                <span className="text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded-full leading-none">
+                  REVERSAL
+                </span>
+              )}
+              {scan.isUndone && (
+                <span className="text-xs font-bold bg-slate-700/60 text-slate-400 border border-slate-600/40 px-1.5 py-0.5 rounded-full leading-none">
+                  REVERSED
+                </span>
+              )}
             </div>
 
-            <span className="text-slate-500 text-xs whitespace-nowrap">
-              {scan.created_date ? formatTime(scan.created_date) : '—'}
-            </span>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <span className="text-slate-500 text-xs whitespace-nowrap">
+                {scan.created_date ? formatTime(scan.created_date) : '—'}
+              </span>
+              {undoable && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-slate-500 hover:text-amber-400 ml-1"
+                  onClick={() => onUndo(scan)}
+                  title="Undo this transaction"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Barcode */}

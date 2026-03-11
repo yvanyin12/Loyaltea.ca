@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import moment from 'moment-timezone';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertCircle, Camera, Keyboard, Loader2, Settings } from 'lucide-react';
@@ -51,13 +50,10 @@ export default function Scanner() {
   const proxyUrl = getProxyUrl();
 
   const log = (level, message) => {
-    // Convert UTC to EDT (Montreal timezone)
-    const edtTime = moment().tz('America/Toronto').format('HH:mm:ss');
-    const fullMsg = `[${edtTime} EDT] ${message}`;
     console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](
-      `[Scanner] ${fullMsg}`
+      `[Scanner] ${message}`
     );
-    setDebugLogs((prev) => [...prev, { level, message: fullMsg }]);
+    setDebugLogs((prev) => [...prev, { level, message }]);
   };
 
 
@@ -67,7 +63,6 @@ export default function Scanner() {
     setProcessing(true);
     setDebugLogs([]);
 
-    log('info', `═══ SCAN START ═══`);
     log('info', `Barcode captured: "${barcodeValue}"`);
     log('info', `Proxy URL: ${proxyUrl}`);
 
@@ -129,9 +124,13 @@ export default function Scanner() {
     const extractHolderInfo = (p) => {
       if (!p) return { firstName: '', lastName: '', name: '', email: '', phone: '' };
 
+      log('info', `--- HOLDER EXTRACTION ---`);
+      log('info', `Top-level keys: ${Object.keys(p).join(', ')}`);
+
       // --- SOURCE 1: passFieldData ---
       // Can be an array of { label/identifier/name, value } or a plain object
       const pfd = p.passFieldData || p.passFields || p.fieldData || null;
+      log('info', `RAW passFieldData: ${JSON.stringify(pfd)}`);
 
       const pfdLookup = {};
       if (pfd && typeof pfd === 'object') {
@@ -148,6 +147,8 @@ export default function Scanner() {
           for (const k of keys) pfdLookup[String(k).toLowerCase()] = val;
         }
       }
+      log('info', `passFieldData lookup keys: ${Object.keys(pfdLookup).join(', ')}`);
+      log('info', `passFieldData lookup values: ${JSON.stringify(pfdLookup)}`);
 
       // --- SOURCE 2: passData text block ---
       // Passcreator sometimes returns a formatted text blob, e.g. "NAME: Yvan\nLAST NAME: Yin\n..."
@@ -165,6 +166,7 @@ export default function Scanner() {
       const textPhone     = parseTextLine('(?:phone(?:\\s*number)?|mobile|telephone|tel|cell|handy)');
       // In Passcreator, "NAME:" means first name when "LAST NAME:" also exists
       const effectiveTextFirstName = textFirstName || (textLastName ? textName : '');
+      log('info', `passData text block parsed → firstName: "${effectiveTextFirstName}" (raw: "${textFirstName}", NAME: "${textName}") | lastName: "${textLastName}" | email: "${textEmail}" | phone: "${textPhone}"`);
 
       // --- SOURCE 3: top-level / nested objects (last resort) ---
       const sources = [p, p.holder, p.customer, p.passholder, p.owner].filter(Boolean);
@@ -237,87 +239,87 @@ export default function Scanner() {
     log('info', `Final holder payload to save: ${JSON.stringify({ holderFirstName: extracted.firstName, holderLastName: extracted.lastName, holderName: extracted.name, holderEmail: extracted.email, holderPhone: extracted.phone })}`);
 
     if (scanResult === 'valid') {
-    const passTemplateGuid = passData?.passTemplateGuid || passData?.passTemplate?.guid || passData?.passTemplate?.id || null;
+      const passTemplateGuid = passData?.passTemplateGuid || passData?.passTemplate?.guid || passData?.passTemplate?.id || null;
 
-    // Use ONLY the currently selected config — never auto-switch
-    const selectedConfig = getSelectedConfig();
+      // Use ONLY the currently selected config — never auto-switch
+      const selectedConfig = getSelectedConfig();
 
-    log('info', `--- CONFIG VALIDATION ---`);
-    log('info', `currently selected config name: "${selectedConfig?.name ?? 'none'}"`);
-    log('info', `currently selected config id: "${(selectedConfig?.configurationId || selectedConfig?.id) ?? 'none'}"`);
-         log('info', `currently selected config passTemplateId: "${selectedConfig?.passTemplateId ?? 'none'}"`);
-         log('info', `scanned pass template guid: "${passTemplateGuid}"`);
-         log('info', `scanned pass template name: "${passData?.passTemplateName ?? 'not set'}"`);
+      log('info', `--- CONFIG VALIDATION ---`);
+      log('info', `currently selected config name: "${selectedConfig?.name ?? 'none'}"`);
+      log('info', `currently selected config id: "${selectedConfig?.configurationId ?? selectedConfig?.id ?? 'none'}"`);
+      log('info', `currently selected config passTemplateId: "${selectedConfig?.passTemplateId ?? 'none'}"`);
+      log('info', `scanned pass template guid: "${passTemplateGuid}"`);
+      log('info', `scanned pass template name: "${passData?.passTemplateName ?? 'not set'}"`);
 
-         if (!selectedConfig) {
-           log('error', `REJECTED: no config selected — go to Settings and select a configuration`);
-           setResult({ status: 'error', barcodeValue, passData, error: 'No configuration selected. Go to Settings and select a configuration.', appScanSubmitted: false });
-           setProcessing(false);
-           return;
-         }
+      if (!selectedConfig) {
+        log('error', `REJECTED: no config selected — go to Settings and select a configuration`);
+        setResult({ status: 'error', barcodeValue, passData, error: 'No configuration selected. Go to Settings and select a configuration.', appScanSubmitted: false });
+        setProcessing(false);
+        return;
+      }
 
-         if (!passTemplateGuid) {
-           log('error', `REJECTED: scanned pass has no passTemplateGuid`);
-           setResult({ status: 'error', barcodeValue, passData, error: 'Pass has no template ID. Cannot validate against selected configuration.', appScanSubmitted: false });
-           setProcessing(false);
-           return;
-         }
+      if (!passTemplateGuid) {
+        log('error', `REJECTED: scanned pass has no passTemplateGuid`);
+        setResult({ status: 'error', barcodeValue, passData, error: 'Pass has no template ID. Cannot validate against selected configuration.', appScanSubmitted: false });
+        setProcessing(false);
+        return;
+      }
 
-         // Strict check: scanned pass must belong to the selected config's template
-         const templateMatches = selectedConfig.passTemplateId === passTemplateGuid;
-         if (!templateMatches) {
-           log('error', `REJECTED: scanned pass template "${passTemplateGuid}" does NOT match selected config template "${selectedConfig.passTemplateId}"`);
-           log('error', `final decision: INVALID_MISMATCH`);
-           setResult({
-             status: 'error',
-             barcodeValue,
-             passData,
-             error: `This pass does not belong to the selected account. Please check the scanner settings and try again.`,
-             appScanSubmitted: false,
-           });
-           setProcessing(false);
-           return;
-         }
+      // Strict check: scanned pass must belong to the selected config's template
+      const templateMatches = selectedConfig.passTemplateId === passTemplateGuid;
+      if (!templateMatches) {
+        log('error', `REJECTED: scanned pass template "${passTemplateGuid}" does NOT match selected config template "${selectedConfig.passTemplateId}"`);
+        log('error', `final decision: INVALID_MISMATCH`);
+        setResult({
+          status: 'error',
+          barcodeValue,
+          passData,
+          error: `This pass does not belong to the selected account. Please check the scanner settings and try again.`,
+          appScanSubmitted: false,
+        });
+        setProcessing(false);
+        return;
+      }
 
-         log('ok', `Template match confirmed ✓ — pass belongs to selected config "${selectedConfig.name}"`);
+      log('ok', `Template match confirmed ✓ — pass belongs to selected config "${selectedConfig.name}"`);
 
-         const config = selectedConfig;
-         const configId = config?.configurationId || config?.id || null;
+      const config = selectedConfig;
+      const configId = config?.configurationId || config?.id || null;
 
-         // Determine selected config's loyalty type
-         const configSavedType = config?.loyaltyType ? config.loyaltyType.toLowerCase() : null;
-         const configNameLower = (config?.name || '').toLowerCase();
-         let configLoyaltyType;
-         if (configSavedType) {
-           configLoyaltyType = configSavedType;
-         } else if (configNameLower.includes('stamp')) {
-           configLoyaltyType = 'stamps';
-         } else if (configNameLower.includes('point') || configNameLower.includes('loyalty')) {
-           configLoyaltyType = 'points';
-         } else {
-           configLoyaltyType = 'stamps'; // safe default
-         }
+      // Determine selected config's loyalty type
+      const configSavedType = config?.loyaltyType ? config.loyaltyType.toLowerCase() : null;
+      const configNameLower = (config?.name || '').toLowerCase();
+      let configLoyaltyType;
+      if (configSavedType) {
+        configLoyaltyType = configSavedType;
+      } else if (configNameLower.includes('stamp')) {
+        configLoyaltyType = 'stamps';
+      } else if (configNameLower.includes('point') || configNameLower.includes('loyalty')) {
+        configLoyaltyType = 'points';
+      } else {
+        configLoyaltyType = 'stamps'; // safe default
+      }
 
-         log('info', `currently selected config loyalty type: ${configLoyaltyType.toUpperCase()}`);
-         log('info', `final decision: ${configLoyaltyType === 'stamps' ? 'VALID_STAMPS' : 'VALID_POINTS'}`);
+      log('info', `currently selected config loyalty type: ${configLoyaltyType.toUpperCase()}`);
+      log('info', `final decision: ${configLoyaltyType === 'stamps' ? 'VALID_STAMPS' : 'VALID_POINTS'}`);
 
-         if (configLoyaltyType === 'stamps') {
-           log('info', `branch taken: STAMPS_FLOW → adding 1 stamp via attendance scan`);
-           const scanMode = config?.scanMode ?? 1;
-           setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult });
-         } else {
-           log('info', `branch taken: POINTS_FLOW → opening Points Loyalty screen`);
-           const currentPoints = getCurrentStoredValue(passData);
-           const rewardPercent = (typeof config?.rewardPercent === 'number' && !isNaN(config.rewardPercent))
-             ? config.rewardPercent
-             : 0.10;
-           log('info', `currentBalance: ${currentPoints}, rewardPercent: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
-           setPointsFlow({ passData, configId, barcodeValue, currentPoints, rewardPercent, configName: config?.name || '' });
-         }
-         }
+      if (configLoyaltyType === 'stamps') {
+        log('info', `branch taken: STAMPS_FLOW → adding 1 stamp via attendance scan`);
+        const scanMode = config?.scanMode ?? 1;
+        setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult });
+      } else {
+        log('info', `branch taken: POINTS_FLOW → opening Points Loyalty screen`);
+        const currentPoints = getCurrentStoredValue(passData);
+        const rewardPercent = (typeof config?.rewardPercent === 'number' && !isNaN(config.rewardPercent))
+          ? config.rewardPercent
+          : 0.10;
+        log('info', `currentBalance: ${currentPoints}, rewardPercent: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
+        setPointsFlow({ passData, configId, barcodeValue, currentPoints, rewardPercent, configName: config?.name || '' });
+      }
+    }
 
-         setProcessing(false);
-         };
+    setProcessing(false);
+  };
 
   const handleConfirmScan = async () => {
     if (!confirmPending) return;
@@ -326,7 +328,6 @@ export default function Scanner() {
     const { passData, configId, barcodeValue, scanMode } = confirmPending;
     const config = getSelectedConfig();
 
-    log('info', `═══ STAMPS TRANSACTION START ═══`);
     log('info', `[CONFIRMED] Submitting scan to Passcreator...`);
 
     const resolvedScanStatus = scanMode === 0 ? 0 : 2; // 0 = void, 2 = attendance
@@ -345,58 +346,53 @@ export default function Scanner() {
     let appScanId = null;
     let errorMsg = '';
 
-    // Fire off the track call in background (non-blocking)
-    createAppScan(trackPayload)
-      .then((trackResponse) => {
-        log('ok', `/track raw response: ${JSON.stringify(trackResponse)}`);
-        appScanSubmitted = true;
-        appScanId = trackResponse?.appScanId || trackResponse?.identifier || trackResponse?.id || null;
-        log('ok', `App scan tracked ✓ appScanId="${appScanId}"`);
-      })
-      .catch((e) => {
-        log('error', `App scan tracking FAILED: ${e.message}`);
-        errorMsg = e.message;
-      })
-      .finally(() => {
-        // Save to database after track completes (still non-blocking to UI)
-        base44.entities.ScanLog.create({
-          barcodeValue,
-          passIdentifier: passData?.identifier || '',
-          appConfigurationId: configId,
-          appConfigurationName: config?.name || '',
-          scanResult: 'valid',
-          isVoided: false,
-          appScanSubmitted,
-          appScanId: appScanId || '',
-          errorMessage: errorMsg,
-          loyaltyMode: 'stamps',
-          holderFirstName: holderInfo.firstName,
-          holderLastName: holderInfo.lastName,
-          holderName: holderInfo.name,
-          holderEmail: holderInfo.email,
-          holderPhone: holderInfo.phone,
-        }).then((created) => {
-          if (created?.id) {
-            setPendingScanId(created.id);
-            if (appScanSubmitted) {
-              setShowAmountInput(true);
-            }
-          }
-        }).catch((e) => log('warn', `ScanLog save failed: ${e.message}`));
-      });
+    try {
+      const trackResponse = await createAppScan(trackPayload);
+      log('ok', `/track raw response: ${JSON.stringify(trackResponse)}`);
+      appScanSubmitted = true;
+      appScanId = trackResponse?.appScanId || trackResponse?.identifier || trackResponse?.id || null;
+      log('ok', `App scan tracked ✓ appScanId="${appScanId}"`);
+    } catch (e) {
+      log('error', `App scan tracking FAILED: ${e.message}`);
+      errorMsg = e.message;
+    }
 
-    // Show result immediately without waiting for track/save
+    // Save to database
+    try {
+      log('info', `[STAMPS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
+      const created = await base44.entities.ScanLog.create({
+        barcodeValue,
+        passIdentifier: passData?.identifier || '',
+        appConfigurationId: configId,
+        appConfigurationName: config?.name || '',
+        scanResult: 'valid',
+        isVoided: false,
+        appScanSubmitted,
+        appScanId: appScanId || '',
+        errorMessage: errorMsg,
+        loyaltyMode: 'stamps',
+        isUndone: false,
+        isReversal: false,
+        holderFirstName: holderInfo.firstName,
+        holderLastName: holderInfo.lastName,
+        holderName: holderInfo.name,
+        holderEmail: holderInfo.email,
+        holderPhone: holderInfo.phone,
+      });
+      if (created?.id) {
+        setPendingScanId(created.id);
+        // Show amount input for revenue tracking
+        if (appScanSubmitted) {
+          setShowAmountInput(true);
+        }
+      }
+    } catch (e) {
+      log('error', `Failed to save scan: ${e.message}`);
+    }
+
     setConfirmPending(null);
     setConfirmLoading(false);
-
-    setResult({
-      status: 'valid',
-      barcodeValue,
-      passData,
-      error: '',
-      appScanSubmitted: true, // Optimistically assume success like Passcreator does
-    });
-    };
+  };
 
   const handleCancelScan = () => {
     setConfirmPending(null);
@@ -411,95 +407,104 @@ export default function Scanner() {
     const { passData, configId, barcodeValue, currentPoints, rewardPercent, configName } = pointsFlow;
     const config = getSelectedConfig();
 
-    // Calculate points earned
-    const pointsEarned = calculatePoints(amountSpent, rewardPercent);
-    const newBalance = currentPoints + pointsEarned;
+    try {
+      // Calculate points earned
+      const pointsEarned = calculatePoints(amountSpent, rewardPercent);
+      const newBalance = currentPoints + pointsEarned;
 
-    log('info', `═══ POINTS TRANSACTION START ═══`);
-    log('info', `--- POINTS CALCULATION ---`);
-    log('info', `config name: "${configName}"`);
-    log('info', `config id: "${configId}"`);
-    log('info', `rewardPercent from saved config: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
-    log('info', `passId (identifier): "${passData?.identifier}"`);
-    log('info', `previousStoredValue: ${currentPoints}`);
-    log('info', `amountSpent: $${amountSpent}`);
-    log('info', `rewardPercent used: ${rewardPercent}`);
-    log('info', `formula: round(${amountSpent} × ${rewardPercent} × 1000) = ${pointsEarned}`);
-    log('info', `newStoredValue: ${currentPoints} + ${pointsEarned} = ${newBalance}`);
+      log('info', `--- POINTS CALCULATION ---`);
+      log('info', `config name: "${configName}"`);
+      log('info', `config id: "${configId}"`);
+      log('info', `rewardPercent from saved config: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
+      log('info', `passId (identifier): "${passData?.identifier}"`);
+      log('info', `previousStoredValue: ${currentPoints}`);
+      log('info', `amountSpent: $${amountSpent}`);
+      log('info', `rewardPercent used: ${rewardPercent}`);
+      log('info', `formula: round(${amountSpent} × ${rewardPercent} × 1000) = ${pointsEarned}`);
+      log('info', `newStoredValue: ${currentPoints} + ${pointsEarned} = ${newBalance}`);
 
-    // Fire off background operations (non-blocking to UI)
-    const trackPayload = {
-      appConfigurationId: configId,
-      passId: passData?.identifier || '',
-      scanStatus: 2, // attendance
-      createdOn: new Date().toISOString(),
-      scannedBarcodeValue: barcodeValue,
-      deviceName: 'Base44 Scanner',
-    };
+      // Submit the app scan (attendance tracking)
+      const resolvedScanStatus = 2; // attendance
+      const trackPayload = {
+        appConfigurationId: configId,
+        passId: passData?.identifier || '',
+        scanStatus: resolvedScanStatus,
+        createdOn: new Date().toISOString(),
+        scannedBarcodeValue: barcodeValue,
+        deviceName: 'Base44 Scanner',
+      };
 
-    log('info', `Submitting app scan and stored value update in background...`);
-    let appScanId = null;
+      log('info', `Submitting app scan...`);
+      let appScanId = null;
+      let appScanSubmitted = false;
 
-    // Fire both requests in parallel, don't wait for either
-    Promise.all([
-      createAppScan(trackPayload)
-        .then((trackResponse) => {
-          appScanId = trackResponse?.appScanId || trackResponse?.identifier || null;
-          log('ok', `App scan tracked: ${appScanId}`);
-        })
-        .catch((e) => log('error', `App scan failed: ${e.message}`)),
+      try {
+        const trackResponse = await createAppScan(trackPayload);
+        appScanSubmitted = true;
+        appScanId = trackResponse?.appScanId || trackResponse?.identifier || null;
+        log('ok', `App scan tracked: ${appScanId}`);
+      } catch (e) {
+        log('error', `App scan failed: ${e.message}`);
+      }
 
-      updateStoredValue(proxyUrl, passData?.identifier, newBalance)
-        .then((svResponse) => {
-          log('ok', `Stored value updated to ${newBalance} ✓`);
-        })
-        .catch((e) => log('error', `FAILED to update stored value: ${e.message}`)),
-    ])
-    .then(() => {
-      // After both complete, save to database
-      log('info', `[POINTS] Saving ScanLog to database...`);
-      base44.entities.ScanLog.create({
+      // Update stored value (loyalty balance) in Passcreator
+      const svPayload = { passId: passData?.identifier || '', newValue: newBalance };
+      log('info', `--- STORED VALUE UPDATE ---`);
+      log('info', `POST ${proxyUrl}/update-stored-value`);
+      log('info', `Payload: ${JSON.stringify(svPayload)}`);
+      try {
+        const svResponse = await updateStoredValue(proxyUrl, passData?.identifier, newBalance);
+        log('ok', `Response: ${JSON.stringify(svResponse)}`);
+        log('ok', `Stored value updated to ${newBalance} ✓`);
+      } catch (e) {
+        log('error', `FAILED to update stored value: ${e.message}`);
+      }
+
+      // Save to database
+      log('info', `[POINTS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
+      await base44.entities.ScanLog.create({
         barcodeValue,
         passIdentifier: passData?.identifier || '',
         appConfigurationId: configId,
         appConfigurationName: configName,
         scanResult: 'valid',
         isVoided: false,
-        appScanSubmitted: true,
+        appScanSubmitted,
         appScanId: appScanId || '',
         loyaltyMode: 'points',
         amountSpent,
         pointsEarned,
         previousPointsBalance: currentPoints,
         newPointsBalance: newBalance,
+        isUndone: false,
         holderFirstName: holderInfo.firstName,
         holderLastName: holderInfo.lastName,
         holderName: holderInfo.name,
         holderEmail: holderInfo.email,
         holderPhone: holderInfo.phone,
-      }).catch((e) => log('warn', `ScanLog save failed: ${e.message}`));
-    });
+      });
 
-    // Show result IMMEDIATELY with calculated balance (like Passcreator does)
-    log('ok', `[UPDATE] Showing result immediately with newBalance=${newBalance}`);
+      setResult({
+        status: 'valid',
+        barcodeValue,
+        passData,
+        error: '',
+        appScanSubmitted,
+        pointsData: {
+          amountSpent,
+          pointsEarned,
+          previousBalance: currentPoints,
+          newBalance,
+        },
+      });
 
-    setResult({
-      status: 'valid',
-      barcodeValue,
-      passData: { ...passData, storedValue: newBalance },
-      error: '',
-      appScanSubmitted: true,
-      pointsData: {
-        amountSpent,
-        pointsEarned,
-        previousBalance: currentPoints,
-        newBalance,
-      },
-    });
+      setPointsFlow(null);
+    } catch (e) {
+      log('error', `Points flow failed: ${e.message}`);
+    }
 
-    setPointsFlow(null);
     setPointsLoading(false);
-    };
+  };
 
   const handleAmountSave = async (amount) => {
     if (pendingScanId) {
