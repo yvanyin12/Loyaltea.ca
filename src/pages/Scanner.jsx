@@ -114,13 +114,9 @@ export default function Scanner() {
     const extractHolderInfo = (p) => {
       if (!p) return { firstName: '', lastName: '', name: '', email: '', phone: '' };
 
-      log('info', `--- HOLDER EXTRACTION ---`);
-      log('info', `Top-level keys: ${Object.keys(p).join(', ')}`);
-
       // --- SOURCE 1: passFieldData ---
       // Can be an array of { label/identifier/name, value } or a plain object
       const pfd = p.passFieldData || p.passFields || p.fieldData || null;
-      log('info', `RAW passFieldData: ${JSON.stringify(pfd)}`);
 
       const pfdLookup = {};
       if (pfd && typeof pfd === 'object') {
@@ -137,8 +133,6 @@ export default function Scanner() {
           for (const k of keys) pfdLookup[String(k).toLowerCase()] = val;
         }
       }
-      log('info', `passFieldData lookup keys: ${Object.keys(pfdLookup).join(', ')}`);
-      log('info', `passFieldData lookup values: ${JSON.stringify(pfdLookup)}`);
 
       // --- SOURCE 2: passData text block ---
       // Passcreator sometimes returns a formatted text blob, e.g. "NAME: Yvan\nLAST NAME: Yin\n..."
@@ -156,7 +150,6 @@ export default function Scanner() {
       const textPhone     = parseTextLine('(?:phone(?:\\s*number)?|mobile|telephone|tel|cell|handy)');
       // In Passcreator, "NAME:" means first name when "LAST NAME:" also exists
       const effectiveTextFirstName = textFirstName || (textLastName ? textName : '');
-      log('info', `passData text block parsed → firstName: "${effectiveTextFirstName}" (raw: "${textFirstName}", NAME: "${textName}") | lastName: "${textLastName}" | email: "${textEmail}" | phone: "${textPhone}"`);
 
       // --- SOURCE 3: top-level / nested objects (last resort) ---
       const sources = [p, p.holder, p.customer, p.passholder, p.owner].filter(Boolean);
