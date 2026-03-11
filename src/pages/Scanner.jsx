@@ -65,6 +65,7 @@ export default function Scanner() {
     setProcessing(true);
     setDebugLogs([]);
 
+    log('info', `═══ SCAN START ═══`);
     log('info', `Barcode captured: "${barcodeValue}"`);
     log('info', `Proxy URL: ${proxyUrl}`);
 
