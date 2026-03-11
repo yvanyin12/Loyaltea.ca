@@ -1,30 +1,19 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, XCircle, AlertCircle, Wifi, Trash2, RefreshCw, Download } from 'lucide-react';
+import { AlertCircle, Trash2, RefreshCw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import moment from 'moment-timezone';
 import RevenueStats from '../components/history/RevenueStats';
+import ScanCard from '../components/history/ScanCard';
+import UndoConfirmDialog from '../components/history/UndoConfirmDialog';
+import { undoScan } from '../components/api/undoApi';
 import { getSelectedConfig } from '../components/api/passcreatorApi';
-
-const RESULT_STYLE = {
-  valid: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-950/40 border-emerald-800', label: 'Confirmed' },
-  already_voided: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-950/40 border-red-800', label: 'Already Used' },
-  unknown: { icon: AlertCircle, color: 'text-amber-400', bg: 'bg-amber-950/30 border-amber-800', label: 'Unknown' },
-  error: { icon: Wifi, color: 'text-slate-400', bg: 'bg-slate-800/50 border-slate-700', label: 'Error' },
-};
-
-// Format timestamp to Montreal time (Eastern Time)
-const formatMontrealTime = (dateString) => {
-  try {
-    return moment.utc(dateString).tz('America/Toronto').format('MMM D, YYYY h:mm:ss A');
-  } catch {
-    return '—';
-  }
-};
 
 export default function ScanHistory() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [undoTarget, setUndoTarget] = useState(null); // scan pending undo confirmation
+  const [undoLoading, setUndoLoading] = useState(false);
   const activeConfig = getSelectedConfig();
   const activeConfigId = activeConfig?.configurationId || activeConfig?.id || null;
   const activeConfigName = activeConfig?.name || null;
@@ -41,6 +30,15 @@ export default function ScanHistory() {
   };
 
   useEffect(() => { loadScans(); }, [activeConfigId]);
+
+  const handleUndoConfirm = async () => {
+    if (!undoTarget) return;
+    setUndoLoading(true);
+    await undoScan(undoTarget);
+    setUndoTarget(null);
+    setUndoLoading(false);
+    await loadScans();
+  };
 
   const handleClear = async () => {
     const label = activeConfigName ? `"${activeConfigName}"` : 'selected configuration';
@@ -101,6 +99,12 @@ export default function ScanHistory() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <UndoConfirmDialog
+        scan={undoTarget}
+        onConfirm={handleUndoConfirm}
+        onCancel={() => setUndoTarget(null)}
+        loading={undoLoading}
+      />
       <div className="max-w-lg mx-auto px-5 py-8">
 
         {/* Header */}
@@ -145,54 +149,9 @@ export default function ScanHistory() {
           </div>
         ) : (
           <div className="space-y-2 mt-5">
-            {scans.map((scan) => {
-              const style = RESULT_STYLE[scan.scanResult] || RESULT_STYLE.error;
-              const Icon = style.icon;
-              const undone = scan.isUndone;
-              return (
-                <div
-                  key={scan.id}
-                  className={`rounded-xl border p-3 ${style.bg}`}
-                >
-                  <div className="flex gap-3 items-start">
-                    <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${style.color}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className={`text-sm font-semibold ${style.color}`}>
-                          {style.label}
-                        </span>
-                        <span className="text-slate-500 text-xs whitespace-nowrap">
-                          {scan.created_date ? formatMontrealTime(scan.created_date) : '—'}
-                        </span>
-                      </div>
-                      <p className="text-slate-300 font-mono text-xs mt-0.5 truncate">{scan.barcodeValue || '—'}</p>
-                      {scan.appConfigurationName && (
-                        <p className="text-slate-500 text-xs mt-0.5">{scan.appConfigurationName}</p>
-                      )}
-                      {scan.amountSpent != null && scan.amountSpent > 0 && (
-                        <p className="text-xs mt-1 font-semibold text-emerald-400">
-                          CAD ${Number(scan.amountSpent).toFixed(2)}
-                        </p>
-                      )}
-                      {scan.loyaltyMode === 'points' && (
-                        <div className="text-xs mt-1 space-y-0.5">
-                          <p className="text-blue-400 font-semibold">
-                            {scan.pointsEarned != null ? `+${scan.pointsEarned.toLocaleString()} pts` : 'Points pending'}
-                          </p>
-                          {scan.newPointsBalance != null && (
-                            <p className="text-emerald-400">Balance: {scan.newPointsBalance.toLocaleString()}</p>
-                          )}
-                        </div>
-                      )}
-                      {scan.errorMessage && (
-                        <p className="text-red-400/70 text-xs mt-1 line-clamp-2">{scan.errorMessage}</p>
-                      )}
-                    </div>
-
-                  </div>
-                </div>
-              );
-            })}
+            {scans.map((scan) => (
+              <ScanCard key={scan.id} scan={scan} onUndo={setUndoTarget} />
+            ))}
           </div>
         )}
       </div>
