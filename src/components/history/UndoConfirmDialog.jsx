@@ -64,6 +64,13 @@ export default function UndoConfirmDialog({ scan, onConfirm, onCancel, loading }
           )}
         </div>
 
+        {loading && (
+          <div className="flex items-center justify-center gap-2 py-2 px-3 bg-slate-800 rounded-lg">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
+            <span className="text-sm text-slate-300">Updating pass…</span>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <Button
             variant="outline"
