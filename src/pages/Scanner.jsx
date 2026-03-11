@@ -385,9 +385,25 @@ export default function Scanner() {
       log('error', `Failed to save scan: ${e.message}`);
     }
 
+    // CRITICAL: Fetch updated pass data immediately after successful stamp scan
+    if (appScanSubmitted && passData?.identifier) {
+      log('info', `[REFRESH] Fetching updated pass after stamp scan...`);
+      try {
+        const updatedPass = await fetchPassDetails(passData.identifier);
+        log('ok', `[REFRESH] Updated pass data received: storedValue=${updatedPass?.storedValue}`);
+        // Update the result to show latest data
+        setResult((prev) => ({
+          ...prev,
+          passData: { ...passData, ...updatedPass },
+        }));
+      } catch (e) {
+        log('warn', `[REFRESH] Could not fetch updated pass: ${e.message}`);
+      }
+    }
+
     setConfirmPending(null);
     setConfirmLoading(false);
-  };
+    };
 
   const handleCancelScan = () => {
     setConfirmPending(null);
