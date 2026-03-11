@@ -20,7 +20,7 @@ export default function PointsConfirmation({
     if (value) {
       const num = parseFloat(value);
       if (!isNaN(num)) {
-        const earned = Math.round(num * rewardPercent * 1000);
+        const earned = Math.round(num * rewardPercent * 100);
         setPointsPreview(earned);
       } else {
         setPointsPreview(0);
@@ -85,7 +85,7 @@ export default function PointsConfirmation({
             <span className="text-emerald-300 font-semibold font-mono">{newBalance.toLocaleString()}</span>
           </div>
           <p className="text-slate-500 text-xs mt-2">
-            {amount} × {(rewardPercent * 100).toFixed(0)}% × 1000 = {pointsPreview.toLocaleString()} pts
+            {amount} × {(rewardPercent * 100).toFixed(0)}% × 100 = {pointsPreview.toLocaleString()} pts
           </p>
         </div>
       )}

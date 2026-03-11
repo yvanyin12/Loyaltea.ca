@@ -41,7 +41,7 @@ const RESULT_CONFIG = {
     iconColor: 'text-slate-400',
     title: 'ERROR',
     titleColor: 'text-slate-300',
-    subtitle: 'Could not connect to Passcreator',
+    subtitle: 'Scan could not be completed',
   },
 };
 

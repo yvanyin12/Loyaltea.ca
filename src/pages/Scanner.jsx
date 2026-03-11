@@ -151,7 +151,7 @@ export default function Scanner() {
           status: 'error',
           barcodeValue,
           passData,
-          error: `Template mismatch: this pass does not belong to the selected configuration "${selectedConfig.name}". Select the correct configuration in Settings.`,
+          error: `This pass does not belong to the selected account. Please check the scanner settings and try again.`,
           appScanSubmitted: false,
         });
         setProcessing(false);

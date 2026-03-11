@@ -62,7 +62,7 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
             <div>
               <Label className="text-slate-300 text-sm font-medium">Reward Percentage</Label>
               <p className="text-slate-500 text-xs mt-0.5">
-                Points earned = amount spent × reward% × 1000
+                Points earned = amount spent × reward% × 100
               </p>
             </div>
 
@@ -98,9 +98,9 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
 
             <div className="bg-slate-800/50 rounded-lg p-3 text-xs">
               <p className="text-slate-400">
-                Example: $10 × {(parseFloat(rewardPercent) || 0.10).toFixed(2)} × 1000 ={' '}
+                Example: $10 × {(parseFloat(rewardPercent) || 0.10).toFixed(2)} × 100 ={' '}
                 <span className="text-blue-400 font-semibold">
-                  {Math.round((parseFloat(rewardPercent) || 0.10) * 10 * 1000).toLocaleString()} pts
+                  {Math.round((parseFloat(rewardPercent) || 0.10) * 10 * 100).toLocaleString()} pts
                 </span>
               </p>
             </div>

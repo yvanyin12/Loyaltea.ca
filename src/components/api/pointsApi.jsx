@@ -36,11 +36,11 @@ export const hasStoredValue = (passData) => {
 };
 
 /**
- * pointsEarned = round(amountSpent * rewardPercent * 1000)
- * Example: $10 * 0.10 * 1000 = 1000 pts
+ * pointsEarned = round(amountSpent * rewardPercent * 100)
+ * Example: $10 * 0.10 * 100 = 100 pts
  */
 export const calculatePoints = (amountSpent, rewardPercent) => {
-  return Math.round(amountSpent * rewardPercent * 1000);
+  return Math.round(amountSpent * rewardPercent * 100);
 };
 
 /**
