@@ -93,40 +93,57 @@ export default function ScanHistory() {
   const handleUndoConfirm = async () => {
     if (!undoTarget) return;
     const uiStartTime = performance.now();
-    console.log(`\n[Phone UI] ═══════════════════════════════════════════════════════════`);
-    console.log(`[Phone UI] UNDO DIALOG: Confirm button accepted at ${uiStartTime.toFixed(0)}ms`);
+    console.log(`\n\n`);
+    console.log(`╔════════════════════════════════════════════════════════════════╗`);
+    console.log(`║ FULL UNDO FLOW TRACE (Device-side)                             ║`);
+    console.log(`╚════════════════════════════════════════════════════════════════╝`);
+    console.log(`[UNDO] [T=0ms] User tapped Confirm Undo button at ${uiStartTime.toFixed(0)}ms`);
+    console.log(`[UNDO] [TARGET] Scan ID: ${undoTarget.id.substring(0, 8)}`);
+    console.log(`[UNDO] [TARGET] Pass ID: ${undoTarget.passIdentifier}`);
+    console.log(`[UNDO] [TARGET] Current balance: ${undoTarget.newPointsBalance || '(stamps mode)'}`);
+    
     setUndoLoading(true);
+    const stateSetTime = performance.now();
+    console.log(`[UNDO] [T=${(stateSetTime - uiStartTime).toFixed(0)}ms] setUndoLoading(true) executed`);
     
     try {
-      const apiStartTime = performance.now();
-      console.log(`[Phone UI] [STATE] setUndoLoading(true) at ${apiStartTime.toFixed(0)}ms`);
-      console.log(`[Phone UI] [STATE] Calling undoScan() at ${apiStartTime.toFixed(0)}ms...`);
-      
+      const apiCallTime = performance.now();
+      console.log(`\n[UNDO] [T=${(apiCallTime - uiStartTime).toFixed(0)}ms] ► Calling undoScan() API...`);
       await undoScan(undoTarget);
       
-      const apiEndTime = performance.now();
-      console.log(`\n[Phone UI] [STATE] undoScan() completed at ${apiEndTime.toFixed(0)}ms (${(apiEndTime - apiStartTime).toFixed(0)}ms API time)`);
-      console.log(`[Phone UI] [STATE] API returned successfully, now refetching history...`);
+      const apiReturnTime = performance.now();
+      console.log(`[UNDO] [T=${(apiReturnTime - uiStartTime).toFixed(0)}ms] ◄ undoScan() completed (${(apiReturnTime - apiCallTime).toFixed(0)}ms API time)`);
+      console.log(`[UNDO] [API RESULT] Passcreator updated, reversal record created`);
       
+      console.log(`\n[UNDO] [T=${(apiReturnTime - uiStartTime).toFixed(0)}ms] ► Calling loadScans() to fetch fresh data...`);
       const dbStartTime = performance.now();
       await loadScans();
       
       const dbEndTime = performance.now();
-      console.log(`[Phone UI] [STATE] loadScans() completed at ${dbEndTime.toFixed(0)}ms (${(dbEndTime - dbStartTime).toFixed(0)}ms DB time)`);
-      console.log(`[Phone UI] [STATE] setScans() has been called with fresh data`);
+      console.log(`[UNDO] [T=${(dbEndTime - uiStartTime).toFixed(0)}ms] ◄ loadScans() completed (${(dbEndTime - dbStartTime).toFixed(0)}ms DB time)`);
+      console.log(`[UNDO] [DB RESULT] Fresh data fetched, setScans() state updated`);
       
       const totalTime = dbEndTime - uiStartTime;
-      console.log(`\n[Phone UI] ═══════════════════════════════════════════════════════════`);
-      console.log(`[Phone UI] [TOTAL] Undo complete in ${totalTime.toFixed(0)}ms`);
-      console.log(`[Phone UI] [TOTAL] Now closing dialog and triggering re-render...`);
+      console.log(`\n[UNDO] [T=${totalTime.toFixed(0)}ms] SYNC CODE COMPLETE — state should be updated`);
+      console.log(`[UNDO] [TIMING BREAKDOWN]:`);
+      console.log(`       API call:  ${(apiReturnTime - apiCallTime).toFixed(0)}ms`);
+      console.log(`       DB fetch:  ${(dbEndTime - dbStartTime).toFixed(0)}ms`);
+      console.log(`       Total:     ${totalTime.toFixed(0)}ms`);
     } finally {
       const finalTime = performance.now();
-      console.log(`[Phone UI] [RENDER] Finally block at ${finalTime.toFixed(0)}ms - clearing dialog & loading state`);
+      console.log(`\n[UNDO] [T=${(finalTime - uiStartTime).toFixed(0)}ms] Finally block executing`);
       setUndoTarget(null);
+      const nullSetTime = performance.now();
+      console.log(`[UNDO] [T=${(nullSetTime - uiStartTime).toFixed(0)}ms] setUndoTarget(null) executed`);
+      
       setUndoLoading(false);
-      console.log(`[Phone UI] [RENDER] Dialog is now null, loading is false`);
-      console.log(`[Phone UI] [RENDER] React will now re-render ScanHistory with fresh scans array`);
-      console.log(`[Phone UI] ═══════════════════════════════════════════════════════════\n`);
+      const loadingSetTime = performance.now();
+      console.log(`[UNDO] [T=${(loadingSetTime - uiStartTime).toFixed(0)}ms] setUndoLoading(false) executed`);
+      
+      console.log(`\n[UNDO] [NEXT] React will batch state updates and trigger re-render`);
+      console.log(`[UNDO] [NEXT] Dialog will close, ScanHistory will re-render with fresh scans`);
+      console.log(`[UNDO] ⏳ NOW MONITORING RENDER PHASE — watch browser for next logs...`);
+      console.log(`╚════════════════════════════════════════════════════════════════╝\n`);
     }
   };
 
