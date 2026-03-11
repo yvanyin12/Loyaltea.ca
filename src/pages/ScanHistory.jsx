@@ -70,17 +70,26 @@ export default function ScanHistory() {
     // Log cache behavior
     addLog(`[DEVICE] [CACHE CHECK] Checking if data looks fresh...`);
     if (firstScan && firstScan.updated_date) {
-      const updatedDate = new Date(firstScan.updated_date);
+      // Parse timestamp safely, ensuring UTC interpretation
+      const dateStr = firstScan.updated_date;
+      const updatedDate = new Date(dateStr);
       const updatedMs = updatedDate.getTime();
       const nowMs = Date.now();
       const ageMs = nowMs - updatedMs;
       
+      addLog(`[TIMESTAMP DEBUG] Raw updated_date: "${dateStr}"`);
+      addLog(`[TIMESTAMP DEBUG] Parsed UTC: ${updatedDate.toISOString()}`);
+      addLog(`[TIMESTAMP DEBUG] Now UTC: ${new Date(nowMs).toISOString()}`);
+      addLog(`[TIMESTAMP DEBUG] Age calculation: ${nowMs} - ${updatedMs} = ${ageMs}ms`);
+      
       // Check for invalid/future timestamps
       if (isNaN(updatedMs)) {
-        addLog(`[DEVICE] [CACHE CHECK] ⚠️ INVALID TIMESTAMP: "${firstScan.updated_date}"`);
+        addLog(`[DEVICE] [CACHE CHECK] ⚠️ INVALID TIMESTAMP: "${dateStr}" failed to parse`);
       } else if (ageMs < 0) {
-        addLog(`[DEVICE] [CACHE CHECK] ⚠️ FUTURE TIMESTAMP: updated ${(-ageMs/1000).toFixed(1)}s in the future`);
-        addLog(`[DEVICE] [CACHE CHECK] This suggests timezone or clock skew issue`);
+        const futureSecs = (-ageMs/1000).toFixed(1);
+        addLog(`[DEVICE] [CACHE CHECK] ⚠️ FUTURE TIMESTAMP: ${futureSecs}s in the future`);
+        addLog(`[DEVICE] [CACHE CHECK] Device clock may be behind server, or timestamp stored incorrectly`);
+        addLog(`[DEVICE] [CACHE CHECK] Treating as current data (ignoring negative age)`);
       } else {
         addLog(`[DEVICE] [CACHE CHECK] Data freshness: ${(ageMs/1000).toFixed(1)}s ago`);
         if (ageMs > 10000) {
