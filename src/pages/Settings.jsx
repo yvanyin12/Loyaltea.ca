@@ -10,6 +10,7 @@ import {
   addSavedConfig,
   removeSavedConfig,
   setActiveConfig,
+  updateSavedConfig,
 } from '../components/api/passcreatorApi';
 import ConfigList from '../components/settings/ConfigList';
 import AddConfigSheet from '../components/settings/AddConfigSheet';
