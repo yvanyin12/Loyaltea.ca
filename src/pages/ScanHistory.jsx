@@ -132,15 +132,17 @@ export default function ScanHistory() {
         addLog(`  Balance: ${firstScan.newPointsBalance}`);
         
         if (firstScan.updated_date) {
-          const updatedDate = new Date(firstScan.updated_date);
+          const dateStr = firstScan.updated_date;
+          const updatedDate = new Date(dateStr);
           const updatedMs = updatedDate.getTime();
           const nowMs = Date.now();
           const ageMs = nowMs - updatedMs;
           
           if (isNaN(updatedMs)) {
-            addLog(`  Updated: INVALID TIMESTAMP`);
+            addLog(`  [TS ERROR] Updated: INVALID TIMESTAMP "${dateStr}"`);
           } else if (ageMs < 0) {
-            addLog(`  Updated: ${(-ageMs/1000).toFixed(1)}s in the future (clock skew?)`);
+            const futureSecs = (-ageMs/1000).toFixed(1);
+            addLog(`  [TS ERROR] Updated: ${futureSecs}s in the future (server clock ahead of device?)`);
           } else {
             addLog(`  Updated: ${(ageMs/1000).toFixed(1)}s ago`);
           }
