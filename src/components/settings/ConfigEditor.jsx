@@ -13,7 +13,8 @@ function inferLoyaltyType(config) {
 }
 
 export default function ConfigEditor({ config, onUpdate, onClose }) {
-  const [loyaltyType, setLoyaltyType] = useState(() => inferLoyaltyType(config));
+  // Loyalty type is locked — determined once from saved config or name inference
+  const loyaltyType = inferLoyaltyType(config);
   // null = nothing selected yet (forces user to pick for points mode)
   const [rewardPercent, setRewardPercent] = useState(
     config.rewardPercent != null ? config.rewardPercent : null
