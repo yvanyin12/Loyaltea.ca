@@ -42,7 +42,7 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
     const updated = {
       ...config,
       loyaltyType,
-      rewardPercent: loyaltyType === 'points' ? parseFloat(rewardPercent) : undefined,
+      rewardPercent: !isStamps ? parseFloat(rewardPercent) : undefined,
     };
     onUpdate(updated);
     setSaved(true);
