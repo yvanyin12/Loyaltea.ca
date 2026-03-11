@@ -70,12 +70,22 @@ export default function ScanHistory() {
     // Log cache behavior
     addLog(`[DEVICE] [CACHE CHECK] Checking if data looks fresh...`);
     if (firstScan && firstScan.updated_date) {
-      const updatedMs = new Date(firstScan.updated_date).getTime();
+      const updatedDate = new Date(firstScan.updated_date);
+      const updatedMs = updatedDate.getTime();
       const nowMs = Date.now();
       const ageMs = nowMs - updatedMs;
-      addLog(`[DEVICE] [CACHE CHECK] First scan was updated ${ageMs}ms ago (${(ageMs/1000).toFixed(1)}s)`);
-      if (ageMs > 10000) {
-        addLog(`[DEVICE] [CACHE CHECK] ⚠️ Data is > 10 seconds old — possible stale cache!`);
+      
+      // Check for invalid/future timestamps
+      if (isNaN(updatedMs)) {
+        addLog(`[DEVICE] [CACHE CHECK] ⚠️ INVALID TIMESTAMP: "${firstScan.updated_date}"`);
+      } else if (ageMs < 0) {
+        addLog(`[DEVICE] [CACHE CHECK] ⚠️ FUTURE TIMESTAMP: updated ${(-ageMs/1000).toFixed(1)}s in the future`);
+        addLog(`[DEVICE] [CACHE CHECK] This suggests timezone or clock skew issue`);
+      } else {
+        addLog(`[DEVICE] [CACHE CHECK] Data freshness: ${(ageMs/1000).toFixed(1)}s ago`);
+        if (ageMs > 10000) {
+          addLog(`[DEVICE] [CACHE CHECK] ⚠️ Data is > 10 seconds old — possible stale cache!`);
+        }
       }
     }
     
