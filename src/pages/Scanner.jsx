@@ -248,12 +248,13 @@ export default function Scanner() {
         log('error', `App scan failed: ${e.message}`);
       }
 
-      // Update POINTS field in Passcreator
+      // Update stored value (loyalty balance) in Passcreator
+      // Endpoint: POST /update-stored-value { passId, newValue }
       try {
-        await updatePointsField(proxyUrl, passData?.identifier, newBalance);
-        log('ok', `POINTS field updated to ${newBalance}`);
+        const svResponse = await updateStoredValue(proxyUrl, passData?.identifier, newBalance);
+        log('ok', `Stored value updated to ${newBalance}. Response: ${JSON.stringify(svResponse)}`);
       } catch (e) {
-        log('error', `Failed to update POINTS: ${e.message}`);
+        log('error', `Failed to update stored value: ${e.message}`);
       }
 
       // Save to database
