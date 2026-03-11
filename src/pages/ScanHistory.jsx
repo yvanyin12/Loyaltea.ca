@@ -51,10 +51,14 @@ export default function ScanHistory() {
 
   const exportCSV = () => {
     const headers = [
-      'Date', 'Time (ET)', 'Configuration',
-      'Customer Name', 'Customer Email', 'Customer Phone',
-      'Pass ID', 'Barcode', 'Result', 'Loyalty Mode',
-      'Amount Spent (CAD)', 'Points Earned', 'Prev Balance', 'New Balance',
+      'Date', 'Time (ET)',
+      'Configuration', 'Loyalty Type',
+      'Pass ID', 'Barcode / Generated ID',
+      'First Name', 'Last Name', 'Customer Name',
+      'Email Address', 'Phone Number',
+      'Scan Result',
+      'Amount Spent (CAD)', 'Points / Stamps Earned',
+      'Previous Balance', 'New Balance',
     ];
     const rows = scans.map((s) => {
       const m = s.created_date ? moment.utc(s.created_date).tz('America/Toronto') : null;
@@ -62,13 +66,15 @@ export default function ScanHistory() {
         m ? m.format('MM/DD/YYYY') : '',
         m ? m.format('HH:mm:ss') : '',
         s.appConfigurationName || '',
+        s.loyaltyMode || '',
+        s.passIdentifier || '',
+        s.barcodeValue || '',
+        s.holderFirstName || '',
+        s.holderLastName || '',
         s.holderName || '',
         s.holderEmail || '',
         s.holderPhone || '',
-        s.passIdentifier || '',
-        s.barcodeValue || '',
         s.scanResult || '',
-        s.loyaltyMode || '',
         s.amountSpent != null ? Number(s.amountSpent).toFixed(2) : '',
         s.pointsEarned != null ? s.pointsEarned : '',
         s.previousPointsBalance != null ? s.previousPointsBalance : '',
