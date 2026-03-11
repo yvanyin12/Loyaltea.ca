@@ -1,14 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2, Plus } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import {
   getProxyUrl,
   setProxyUrl,
   getSavedConfigs,
-  getSelectedConfig,
   addSavedConfig,
   removeSavedConfig,
   setActiveConfig,
@@ -18,45 +16,12 @@ import ConfigList from '../components/settings/ConfigList';
 import AddConfigSheet from '../components/settings/AddConfigSheet';
 import ConfigEditor from '../components/settings/ConfigEditor';
 
-function RestaurantSettings() {
-  const config = getSelectedConfig();
-  return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center px-6 py-12">
-      <div className="w-full max-w-sm text-center space-y-6">
-        <div className="w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mx-auto">
-          <CheckCircle2 className="w-8 h-8 text-blue-400" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-white">Ready to Scan</h1>
-          {config ? (
-            <p className="text-slate-400 text-sm mt-2">
-              Your scanner is configured for <span className="text-white font-medium">{config.name}</span>.
-            </p>
-          ) : (
-            <p className="text-slate-400 text-sm mt-2">Your scanner is set up and ready to use.</p>
-          )}
-        </div>
-        <p className="text-slate-500 text-xs">
-          Use the Scanner tab to scan loyalty passes and the History tab to review past scans.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export default function Settings() {
-  const [isAdmin, setIsAdmin] = useState(null); // null = loading
   const [proxyUrl, setProxyUrlState] = useState(getProxyUrl());
   const [configs, setConfigs] = useState(getSavedConfigs());
   const [proxySaved, setProxySaved] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState(null);
-
-  useEffect(() => {
-    base44.auth.me().then((user) => {
-      setIsAdmin(user?.role === 'admin');
-    }).catch(() => setIsAdmin(false));
-  }, []);
 
   const refresh = () => setConfigs(getSavedConfigs());
 
@@ -82,15 +47,15 @@ export default function Settings() {
     refresh();
   };
 
+  const handleEditConfig = (cfg) => {
+    setEditingConfig(cfg);
+  };
+
   const handleUpdateConfig = (updated) => {
-    updateSavedConfig(updated);
+    updateSavedConfig(updated); // persists to 'pc_configs' via persistConfigs
     refresh();
     setEditingConfig(null);
   };
-
-  if (isAdmin === null) return null; // loading
-
-  if (!isAdmin) return <RestaurantSettings />;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -143,7 +108,7 @@ export default function Settings() {
             configs={configs}
             onSetActive={handleSetActive}
             onRemove={handleRemove}
-            onEdit={(cfg) => setEditingConfig(cfg)}
+            onEdit={handleEditConfig}
           />
         </div>
       </div>

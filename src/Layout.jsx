@@ -1,30 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { ScanLine, History, Settings } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 
-const BASE_NAV = [
+const NAV_ITEMS = [
   { label: 'Scanner', page: 'Scanner', icon: ScanLine },
   { label: 'History', page: 'ScanHistory', icon: History },
-];
-
-const ADMIN_NAV = [
-  ...BASE_NAV,
   { label: 'Settings', page: 'Settings', icon: Settings },
 ];
 
 export default function Layout({ children, currentPageName }) {
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    base44.auth.me().then((user) => {
-      setIsAdmin(user?.role === 'admin');
-    }).catch(() => {});
-  }, []);
-
-  const navItems = isAdmin ? ADMIN_NAV : BASE_NAV;
-
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       <main className="flex-1 pb-20">
@@ -34,7 +18,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Bottom navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-50">
         <div className="flex max-w-lg mx-auto">
-          {navItems.map(({ label, page, icon: Icon }) => {
+          {NAV_ITEMS.map(({ label, page, icon: Icon }) => {
             const isActive = currentPageName === page;
             return (
               <Link
