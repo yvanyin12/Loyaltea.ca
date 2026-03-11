@@ -1,13 +1,19 @@
 /**
  * Stored Value (loyalty balance) calculation and Passcreator update logic.
  *
- * Passcreator stores the loyalty balance in the pass's `storedValue` field,
- * NOT in a custom field called POINTS.
+ * Passcreator stores the loyalty balance in the pass's `storedValue` field.
  *
  * Proxy endpoint required:
  *   POST /update-stored-value
  *   Body: { passId: string, newValue: number }
- *   Proxy translates to: PUT https://app.passcreator.com/api/pass/{passId}/storedvalue
+ *
+ *   Proxy must call:
+ *     PUT https://app.passcreator.com/api/pass/{passId}
+ *     Headers: Authorization: <apiKey>, Content-Type: application/json
+ *     Body: { "storedValue": newValue }
+ *
+ *   ⚠️  There is NO separate /storedvalue endpoint in Passcreator.
+ *   storedValue is updated via the standard pass update endpoint (PUT /api/pass/{id}).
  */
 
 /**
