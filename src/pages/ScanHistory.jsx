@@ -248,6 +248,7 @@ export default function ScanHistory() {
         onCancel={() => setUndoTarget(null)}
         loading={undoLoading}
       />
+      <DebugPanel logs={debugLogs} />
       <div className="max-w-lg mx-auto px-5 py-8">
 
         {/* Header */}
