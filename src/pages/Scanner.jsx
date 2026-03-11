@@ -13,6 +13,7 @@ import ScanConfirmation from '../components/scanner/ScanConfirmation';
 import {
   getProxyUrl,
   getSelectedConfig,
+  getSavedConfigs,
   checkPassByBarcode,
   fetchPassDetails,
   createAppScan,
