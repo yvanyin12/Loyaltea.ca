@@ -405,6 +405,17 @@ export default function Scanner() {
       const pointsEarned = calculatePoints(amountSpent, rewardPercent);
       const newBalance = currentPoints + pointsEarned;
 
+      log('info', `--- POINTS CALCULATION ---`);
+      log('info', `config name: "${configName}"`);
+      log('info', `config id: "${configId}"`);
+      log('info', `rewardPercent from saved config: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
+      log('info', `passId (identifier): "${passData?.identifier}"`);
+      log('info', `previousStoredValue: ${currentPoints}`);
+      log('info', `amountSpent: $${amountSpent}`);
+      log('info', `rewardPercent used: ${rewardPercent}`);
+      log('info', `formula: round(${amountSpent} × ${rewardPercent} × 1000) = ${pointsEarned}`);
+      log('info', `newStoredValue: ${currentPoints} + ${pointsEarned} = ${newBalance}`);
+
       // Submit the app scan (attendance tracking)
       const resolvedScanStatus = 2; // attendance
       const trackPayload = {
@@ -416,6 +427,7 @@ export default function Scanner() {
         deviceName: 'Base44 Scanner',
       };
 
+      log('info', `Submitting app scan...`);
       let appScanId = null;
       let appScanSubmitted = false;
 
@@ -423,20 +435,26 @@ export default function Scanner() {
         const trackResponse = await createAppScan(trackPayload);
         appScanSubmitted = true;
         appScanId = trackResponse?.appScanId || trackResponse?.identifier || null;
-        log('ok', `App scan tracked`);
+        log('ok', `App scan tracked: ${appScanId}`);
       } catch (e) {
         log('error', `App scan failed: ${e.message}`);
       }
 
       // Update stored value (loyalty balance) in Passcreator
+      const svPayload = { passId: passData?.identifier || '', newValue: newBalance };
+      log('info', `--- STORED VALUE UPDATE ---`);
+      log('info', `POST ${proxyUrl}/update-stored-value`);
+      log('info', `Payload: ${JSON.stringify(svPayload)}`);
       try {
-        await updateStoredValue(proxyUrl, passData?.identifier, newBalance);
-        log('ok', `Points updated to ${newBalance}`);
+        const svResponse = await updateStoredValue(proxyUrl, passData?.identifier, newBalance);
+        log('ok', `Response: ${JSON.stringify(svResponse)}`);
+        log('ok', `Stored value updated to ${newBalance} ✓`);
       } catch (e) {
-        log('error', `Failed to update stored value: ${e.message}`);
+        log('error', `FAILED to update stored value: ${e.message}`);
       }
 
       // Save to database
+      log('info', `[POINTS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
       await base44.entities.ScanLog.create({
         barcodeValue,
         passIdentifier: passData?.identifier || '',
