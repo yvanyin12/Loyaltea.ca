@@ -92,6 +92,9 @@ export default function Scanner() {
         scanResult = 'valid';
         passData = checkData;
         log('ok', `Pass is VALID`);
+        log('info', `passData.identifier: "${checkData.identifier}"`);
+        log('info', `passData.storedValue: ${JSON.stringify(checkData.storedValue)}`);
+        log('info', `passData keys: ${Object.keys(checkData).join(', ')}`);
       }
     } catch (err) {
       scanResult = 'error';
@@ -110,6 +113,7 @@ export default function Scanner() {
     // Show confirmation dialog for valid passes
     if (scanResult === 'valid' && configId) {
       // Check if this is a points mode pass (stored value present)
+      log('info', `hasStoredValue check: storedValue=${JSON.stringify(passData?.storedValue)} → ${hasStoredValue(passData)}`);
       if (hasStoredValue(passData)) {
         const currentPoints = getCurrentStoredValue(passData);
         const rewardPercent = config?.rewardPercent || 0.10; // default 10%
@@ -222,7 +226,13 @@ export default function Scanner() {
       const pointsEarned = calculatePoints(amountSpent, rewardPercent);
       const newBalance = currentPoints + pointsEarned;
 
-      log('info', `Points earned: ${pointsEarned}, New balance: ${newBalance}`);
+      log('info', `--- POINTS CALCULATION ---`);
+      log('info', `passId (identifier): "${passData?.identifier}"`);
+      log('info', `previousStoredValue: ${currentPoints}`);
+      log('info', `amountSpent: $${amountSpent}`);
+      log('info', `rewardPercent: ${rewardPercent}`);
+      log('info', `pointsEarned: round(${amountSpent} × ${rewardPercent} × 1000) = ${pointsEarned}`);
+      log('info', `newStoredValue: ${currentPoints} + ${pointsEarned} = ${newBalance}`);
 
       // Submit the app scan (attendance tracking)
       const resolvedScanStatus = 2; // attendance
@@ -235,7 +245,7 @@ export default function Scanner() {
         deviceName: 'Base44 Scanner',
       };
 
-      log('info', `Submitting app scan and updating points...`);
+      log('info', `Submitting app scan...`);
       let appScanId = null;
       let appScanSubmitted = false;
 
@@ -249,12 +259,16 @@ export default function Scanner() {
       }
 
       // Update stored value (loyalty balance) in Passcreator
-      // Endpoint: POST /update-stored-value { passId, newValue }
+      const svPayload = { passId: passData?.identifier || '', newValue: newBalance };
+      log('info', `--- STORED VALUE UPDATE ---`);
+      log('info', `POST ${proxyUrl}/update-stored-value`);
+      log('info', `Payload: ${JSON.stringify(svPayload)}`);
       try {
         const svResponse = await updateStoredValue(proxyUrl, passData?.identifier, newBalance);
-        log('ok', `Stored value updated to ${newBalance}. Response: ${JSON.stringify(svResponse)}`);
+        log('ok', `Response: ${JSON.stringify(svResponse)}`);
+        log('ok', `Stored value updated to ${newBalance} ✓`);
       } catch (e) {
-        log('error', `Failed to update stored value: ${e.message}`);
+        log('error', `FAILED to update stored value: ${e.message}`);
       }
 
       // Save to database
