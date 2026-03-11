@@ -2,23 +2,16 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 export default function ConfigEditor({ config, onUpdate, onClose }) {
   const [loyaltyType, setLoyaltyType] = useState(config.loyaltyType ?? 'points');
-  const [rewardPercent, setRewardPercent] = useState(config.rewardPercent ?? 0.10);
+  // null = nothing selected yet (forces user to pick for points mode)
+  const [rewardPercent, setRewardPercent] = useState(
+    config.rewardPercent != null ? config.rewardPercent : null
+  );
   const [saved, setSaved] = useState(false);
-
-  const handleSave = () => {
-    const updated = {
-      ...config,
-      loyaltyType,
-      rewardPercent: loyaltyType === 'points' ? (parseFloat(rewardPercent) || 0.10) : config.rewardPercent,
-    };
-    onUpdate(updated);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
+  const [validationError, setValidationError] = useState('');
 
   const presets = [
     { label: '5%', value: 0.05 },
@@ -26,6 +19,34 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
     { label: '15%', value: 0.15 },
     { label: '20%', value: 0.20 },
   ];
+
+  const handleSave = () => {
+    if (loyaltyType === 'points') {
+      const parsed = parseFloat(rewardPercent);
+      if (rewardPercent === null || rewardPercent === '' || isNaN(parsed) || parsed <= 0) {
+        setValidationError('Please select or enter a reward percentage before saving.');
+        return;
+      }
+    }
+    setValidationError('');
+    const updated = {
+      ...config,
+      loyaltyType,
+      rewardPercent: loyaltyType === 'points' ? parseFloat(rewardPercent) : undefined,
+    };
+    onUpdate(updated);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleLoyaltyTypeChange = (type) => {
+    setLoyaltyType(type);
+    setValidationError('');
+    // Reset selection when switching to points so user must pick
+    if (type === 'points') setRewardPercent(null);
+  };
+
+  const parsedReward = rewardPercent !== null ? parseFloat(rewardPercent) : null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -43,7 +64,7 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
             {['points', 'stamps'].map((type) => (
               <button
                 key={type}
-                onClick={() => setLoyaltyType(type)}
+                onClick={() => handleLoyaltyTypeChange(type)}
                 className={`flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition-all ${
                   loyaltyType === type
                     ? type === 'points' ? 'bg-blue-600 text-white' : 'bg-amber-600 text-white'
@@ -60,7 +81,9 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
         {loyaltyType === 'points' && (
           <div className="space-y-3 border-t border-slate-800 pt-4">
             <div>
-              <Label className="text-slate-300 text-sm font-medium">Reward Percentage</Label>
+              <Label className="text-slate-300 text-sm font-medium">
+                Reward Percentage <span className="text-red-400">*</span>
+              </Label>
               <p className="text-slate-500 text-xs mt-0.5">
                 Points earned = amount spent × reward% × 100
               </p>
@@ -72,7 +95,7 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
                   key={preset.value}
                   onClick={() => setRewardPercent(preset.value)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    parseFloat(rewardPercent) === preset.value
+                    parsedReward === preset.value
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                   }`}
@@ -89,22 +112,28 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
                 min="0"
                 max="1"
                 step="0.01"
-                value={rewardPercent}
+                value={rewardPercent ?? ''}
                 onChange={(e) => setRewardPercent(e.target.value)}
                 className="bg-slate-800 border-slate-700 text-white mt-1"
-                placeholder="0.10"
+                placeholder="e.g. 0.10 for 10%"
               />
             </div>
 
-            <div className="bg-slate-800/50 rounded-lg p-3 text-xs">
-              <p className="text-slate-400">
-                Example: $10 × {(parseFloat(rewardPercent) || 0.10).toFixed(2)} × 100 ={' '}
-                <span className="text-blue-400 font-semibold">
-                  {Math.round((parseFloat(rewardPercent) || 0.10) * 10 * 100).toLocaleString()} pts
-                </span>
-              </p>
-            </div>
+            {parsedReward !== null && !isNaN(parsedReward) && parsedReward > 0 && (
+              <div className="bg-slate-800/50 rounded-lg p-3 text-xs">
+                <p className="text-slate-400">
+                  Example: $10 × {parsedReward.toFixed(2)} × 100 ={' '}
+                  <span className="text-blue-400 font-semibold">
+                    {Math.round(parsedReward * 10 * 100).toLocaleString()} pts
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
+        )}
+
+        {validationError && (
+          <p className="text-red-400 text-xs">{validationError}</p>
         )}
 
         <div className="flex gap-2 border-t border-slate-800 pt-4">
