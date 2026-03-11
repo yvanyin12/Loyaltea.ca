@@ -63,6 +63,7 @@ const finalizeUndo = async (originalScan, reversalFields) => {
  * and writes it back via /update-stored-value — the same mechanism used for points.
  * Also best-effort deletes the app scan record.
  * Then creates an audit reversal record.
+ * Finally, immediately refetches pass details to ensure fresh state.
  */
 export async function undoStampsScan(originalScan) {
   const proxyUrl = getProxyUrl();
@@ -102,6 +103,18 @@ export async function undoStampsScan(originalScan) {
       console.log('[Undo Stamps] delete-scan response:', JSON.stringify(deleteResult));
     } catch (e) {
       console.warn('[Undo Stamps] delete-scan failed (non-fatal):', e.message);
+    }
+  }
+
+  // 3. Refetch pass details to confirm updated state
+  if (originalScan.passIdentifier) {
+    console.log('[Undo Stamps] Refetching pass details to verify stamp count...');
+    try {
+      const verifyData = await fetchPassDetails(originalScan.passIdentifier);
+      const stampsVerified = parseInt(verifyData?.storedValue ?? 0, 10);
+      console.log('[Undo Stamps] Verification: stamp count now =', stampsVerified);
+    } catch (e) {
+      console.warn('[Undo Stamps] Could not verify final stamp count:', e.message);
     }
   }
 
