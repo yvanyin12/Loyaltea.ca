@@ -43,6 +43,11 @@ export default function ScanCard({ scan, onUndo }) {
   const Icon = style.icon;
   const undoable = isUndoable(scan);
 
+  // Log render updates with fresh scan data
+  if (scan.isUndone || scan.isReversal) {
+    console.log(`[Client Undo] ScanCard re-rendered at ${performance.now().toFixed(0)}ms for scan ${scan.id.substring(0, 8)}... [isUndone=${scan.isUndone}, isReversal=${scan.isReversal}]`);
+  }
+
   return (
     <div
       className={`rounded-xl border p-3 transition-opacity ${style.bg} ${
