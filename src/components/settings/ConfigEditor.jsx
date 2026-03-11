@@ -49,13 +49,6 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleLoyaltyTypeChange = (type) => {
-    setLoyaltyType(type);
-    setValidationError('');
-    // Reset selection when switching to points so user must pick
-    if (type === 'points') setRewardPercent(null);
-  };
-
   const parsedReward = rewardPercent !== null ? parseFloat(rewardPercent) : null;
 
   return (
