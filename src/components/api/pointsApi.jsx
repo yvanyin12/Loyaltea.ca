@@ -48,9 +48,11 @@ export const calculatePoints = (amountSpent, rewardPercent) => {
  *
  * Proxy must handle:
  *   POST /update-stored-value { passId, newValue }
- *   → PUT https://app.passcreator.com/api/pass/{passId}/storedvalue  { value: newValue }
+ *   → PUT https://app.passcreator.com/api/pass/{passId}
+ *      Body: { "storedValue": newValue }
  *
- * Raw request payload: { passId: "<pass UUID>", newValue: <integer> }
+ * ⚠️  Passcreator does NOT have a /storedvalue sub-endpoint.
+ *     Use the standard pass update endpoint with the storedValue field.
  */
 export async function updateStoredValue(proxyUrl, passId, newValue) {
   const fullUrl = `${proxyUrl}/update-stored-value`;
