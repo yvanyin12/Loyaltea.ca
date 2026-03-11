@@ -423,6 +423,7 @@ export default function Scanner() {
       }
 
       // Save to database
+      log('info', `[POINTS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
       await base44.entities.ScanLog.create({
         barcodeValue,
         passIdentifier: passData?.identifier || '',
