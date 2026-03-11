@@ -20,28 +20,40 @@ export default function ScanHistory() {
 
   const loadScans = async () => {
     const fetchStartTime = performance.now();
-    console.log(`[Client Undo] loadScans() called at ${fetchStartTime.toFixed(0)}ms`);
-    setLoading(true);
+    console.log(`[Phone UI] [DB] loadScans() called at ${fetchStartTime.toFixed(0)}ms`);
     
-    const dbStartTime = performance.now();
+    const dbQueryTime = performance.now();
     let data = await base44.entities.ScanLog.list('-created_date', 500);
-    const dbEndTime = performance.now();
-    console.log(`[Client Undo] ScanLog.list() returned at ${dbEndTime.toFixed(0)}ms (${(dbEndTime - dbStartTime).toFixed(0)}ms)`);
+    const dbResultTime = performance.now();
+    console.log(`[Phone UI] [DB] ScanLog.list() returned at ${dbResultTime.toFixed(0)}ms (${(dbResultTime - dbQueryTime).toFixed(0)}ms latency)`);
+    console.log(`[Phone UI] [DB] Raw DB count: ${data.length} scans`);
     
     // Filter to only show scans for the currently selected config
     if (activeConfigId) {
+      const beforeFilter = data.length;
       data = data.filter((s) => s.appConfigurationId === activeConfigId);
+      console.log(`[Phone UI] [DB] After filter for config "${activeConfigId}": ${data.length}/${beforeFilter} scans`);
     }
     
-    const setStartTime = performance.now();
+    const firstScan = data[0];
+    if (firstScan) {
+      console.log(`[Phone UI] [DB] First scan in list:`, {
+        id: firstScan.id.substring(0, 8),
+        isUndone: firstScan.isUndone,
+        isReversal: firstScan.isReversal,
+        pointsEarned: firstScan.pointsEarned,
+        newPointsBalance: firstScan.newPointsBalance,
+      });
+    }
+    
+    const setStateTime = performance.now();
     setScans(data);
-    const setEndTime = performance.now();
-    console.log(`[Client Undo] setScans() state updated at ${setEndTime.toFixed(0)}ms (${(setEndTime - setStartTime).toFixed(0)}ms)`);
-    console.log(`[Client Undo] Fetched ${data.length} scans, data snapshot:`, data.slice(0, 2));
+    console.log(`[Phone UI] [STATE] setScans() called at ${setStateTime.toFixed(0)}ms with ${data.length} items`);
+    console.log(`[Phone UI] [STATE] React will batch this state update and re-render on next render phase`);
     
     setLoading(false);
     const completeTime = performance.now();
-    console.log(`[Client Undo] loadScans() complete at ${completeTime.toFixed(0)}ms (${(completeTime - fetchStartTime).toFixed(0)}ms total)`);
+    console.log(`[Phone UI] [DB] loadScans() complete at ${completeTime.toFixed(0)}ms (${(completeTime - fetchStartTime).toFixed(0)}ms total)`);
   };
 
   useEffect(() => { loadScans(); }, [activeConfigId]);
