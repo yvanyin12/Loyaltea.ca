@@ -202,48 +202,55 @@ export async function undoPointsScan(originalScan) {
   const pointsEarned = originalScan.pointsEarned || 0;
   const submitTime = performance.now();
 
-  console.log(`[Undo Points] ── BEGIN at ${submitTime.toFixed(0)}ms ──────────────────────────`);
+  console.log(`\n[Phone API] ═══════════════════════════════════════════════════════════`);
+  console.log(`[Phone API] POINTS UNDO REQUEST at ${submitTime.toFixed(0)}ms`);
+  console.log(`[Phone API] Pass ID: ${originalScan.passIdentifier}`);
+  console.log(`[Phone API] App Scan ID: ${originalScan.appScanId}`);
+  console.log(`[Phone API] Current balance: ${originalScan.newPointsBalance}`);
+  console.log(`[Phone API] Points earned: ${pointsEarned}`);
 
   // Revert to the balance that existed before the original scan
   const revertedBalance =
     originalScan.previousPointsBalance ??
     (originalScan.newPointsBalance - pointsEarned);
 
-  console.log(`[Undo Points] Target balance after undo: ${revertedBalance}`);
+  console.log(`[Phone API] Target balance after undo: ${revertedBalance}`);
 
   // 1. Revert stored value in Passcreator
   if (originalScan.passIdentifier) {
     const updateStartTime = performance.now();
-    console.log(`[Undo Points] Sending /update-stored-value at ${updateStartTime.toFixed(0)}ms...`);
-    await updateStoredValue(proxyUrl, originalScan.passIdentifier, revertedBalance);
+    console.log(`[Phone API] [Step 1] Sending UPDATE to Passcreator at ${updateStartTime.toFixed(0)}ms...`);
+    const updateResult = await updateStoredValue(proxyUrl, originalScan.passIdentifier, revertedBalance);
     const updateEndTime = performance.now();
-    console.log(`[Undo Points] Passcreator confirmed undo at ${updateEndTime.toFixed(0)}ms (${(updateEndTime - updateStartTime).toFixed(0)}ms request time)`);
+    console.log(`[Phone API] [Step 1] UPDATE confirmed at ${updateEndTime.toFixed(0)}ms (${(updateEndTime - updateStartTime).toFixed(0)}ms)`);
+    console.log(`[Phone API] [Step 1] Passcreator response:`, JSON.stringify(updateResult));
   }
 
   // 2. Delete app scan (best-effort — don't fail the whole undo if this errors)
   if (originalScan.appScanId) {
     const deleteStartTime = performance.now();
-    console.log(`[Undo Points] Deleting app scan at ${deleteStartTime.toFixed(0)}ms...`);
+    console.log(`[Phone API] [Step 2] Deleting app scan at ${deleteStartTime.toFixed(0)}ms...`);
     try {
       await deleteAppScan(originalScan.appScanId);
       const deleteEndTime = performance.now();
-      console.log(`[Undo Points] Delete confirmed at ${deleteEndTime.toFixed(0)}ms (${(deleteEndTime - deleteStartTime).toFixed(0)}ms)`);
+      console.log(`[Phone API] [Step 2] Delete confirmed at ${deleteEndTime.toFixed(0)}ms (${(deleteEndTime - deleteStartTime).toFixed(0)}ms)`);
     } catch (e) {
-      console.warn('[Undo Points] Could not delete app scan record:', e.message);
+      console.warn('[Phone API] [Step 2] Delete failed (non-fatal):', e.message);
     }
   }
 
   // 3. Poll for updated value until it matches expected state or timeout
   let pollResult = null;
   if (originalScan.passIdentifier) {
-    console.log(`[Undo Points] Starting polling cycle at ${performance.now().toFixed(0)}ms...`);
     pollResult = await pollPassDetailsUntilUpdated(originalScan.passIdentifier, revertedBalance, 5, 1000);
-    console.log(`[Undo Points] Poll result:`, JSON.stringify(pollResult));
   }
 
   const finalTime = performance.now();
   const totalElapsed = finalTime - submitTime;
-  console.log(`[Undo Points] ── COMPLETE at ${finalTime.toFixed(0)}ms (${totalElapsed.toFixed(0)}ms total) ──`);
+  console.log(`\n[Phone API] ═══════════════════════════════════════════════════════════`);
+  console.log(`[Phone API] UNDO COMPLETE: ${originalScan.newPointsBalance} → ${revertedBalance} in ${totalElapsed.toFixed(0)}ms`);
+  console.log(`[Phone API] Poll result: ${pollResult?.success ? '✓ SUCCESS' : '✗ FAILED'}`);
+  console.log(`[Phone API] Now returning to UI layer for state update...`);
 
   // 4. Create reversal audit record
   return finalizeUndo(originalScan, {
