@@ -14,6 +14,44 @@ import { deleteAppScan, fetchPassDetails, getProxyUrl } from './passcreatorApi';
 import { updateStoredValue } from './pointsApi';
 import { base44 } from '@/api/base44Client';
 
+// Polling helper to refetch pass details until the value matches expected state or timeout
+async function pollPassDetailsUntilUpdated(passIdentifier, expectedValue, maxRetries = 5, delayMs = 1000) {
+  const pollStartTime = performance.now();
+  console.log(`[Undo Poll] Starting poll at ${pollStartTime.toFixed(0)}ms, expecting value: ${expectedValue}`);
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    if (attempt > 1) {
+      console.log(`[Undo Poll] Waiting ${delayMs}ms before attempt ${attempt}/${maxRetries}...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    const attemptTime = performance.now();
+    console.log(`[Undo Poll] Attempt ${attempt}/${maxRetries} at ${attemptTime.toFixed(0)}ms (${(attemptTime - pollStartTime).toFixed(0)}ms elapsed)`);
+
+    try {
+      const passData = await fetchPassDetails(passIdentifier);
+      const currentValue = parseInt(passData?.storedValue ?? 0, 10);
+      const fetchTime = performance.now();
+      console.log(`[Undo Poll] Fetched value: ${currentValue} at ${fetchTime.toFixed(0)}ms (${(fetchTime - attemptTime).toFixed(0)}ms fetch time)`);
+
+      if (currentValue === expectedValue) {
+        const totalElapsed = fetchTime - pollStartTime;
+        console.log(`[Undo Poll] ✓ Value matched! Took ${totalElapsed.toFixed(0)}ms total.`);
+        return { success: true, value: currentValue, elapsedMs: totalElapsed, attempts: attempt };
+      }
+
+      if (attempt === maxRetries) {
+        console.warn(`[Undo Poll] ✗ Max retries reached. Final value: ${currentValue}, expected: ${expectedValue}`);
+        return { success: false, value: currentValue, expectedValue, elapsedMs: fetchTime - pollStartTime, attempts: attempt };
+      }
+    } catch (e) {
+      console.warn(`[Undo Poll] Attempt ${attempt} failed:`, e.message);
+    }
+  }
+
+  return { success: false, elapsedMs: performance.now() - pollStartTime, attempts: maxRetries };
+}
+
 // ── Eligibility ───────────────────────────────────────────────────────────────
 
 /**
