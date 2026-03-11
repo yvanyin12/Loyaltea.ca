@@ -25,35 +25,53 @@ const formatMontrealTime = (dateString) => {
 export default function ScanHistory() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const activeConfig = getSelectedConfig();
+  const activeConfigId = activeConfig?.configurationId || activeConfig?.id || null;
+  const activeConfigName = activeConfig?.name || null;
 
   const loadScans = async () => {
     setLoading(true);
-    const data = await base44.entities.ScanLog.list('-created_date', 200);
+    let data = await base44.entities.ScanLog.list('-created_date', 500);
+    // Filter to only show scans for the currently selected config
+    if (activeConfigId) {
+      data = data.filter((s) => s.appConfigurationId === activeConfigId);
+    }
     setScans(data);
     setLoading(false);
   };
 
-  useEffect(() => { loadScans(); }, []);
+  useEffect(() => { loadScans(); }, [activeConfigId]);
 
   const handleClear = async () => {
-    if (!window.confirm('Clear all scan history?')) return;
+    const label = activeConfigName ? `"${activeConfigName}"` : 'selected configuration';
+    if (!window.confirm(`Clear all scan history for ${label}?`)) return;
     await Promise.all(scans.map((s) => base44.entities.ScanLog.delete(s.id)));
     setScans([]);
   };
 
   const exportCSV = () => {
-    const headers = ['Date', 'Time', 'Barcode', 'Result', 'Configuration', 'Mode', 'Amount Spent (CAD)', 'Points Earned', 'Points Balance'];
+    const headers = [
+      'Date', 'Time (ET)', 'Configuration',
+      'Customer Name', 'Customer Email', 'Customer Phone',
+      'Pass ID', 'Barcode', 'Result', 'Loyalty Mode',
+      'Amount Spent (CAD)', 'Points Earned', 'Prev Balance', 'New Balance',
+    ];
     const rows = scans.map((s) => {
       const m = s.created_date ? moment.utc(s.created_date).tz('America/Toronto') : null;
       return [
         m ? m.format('MM/DD/YYYY') : '',
         m ? m.format('HH:mm:ss') : '',
+        s.appConfigurationName || '',
+        s.holderName || '',
+        s.holderEmail || '',
+        s.holderPhone || '',
+        s.passIdentifier || '',
         s.barcodeValue || '',
         s.scanResult || '',
-        s.appConfigurationName || '',
         s.loyaltyMode || '',
         s.amountSpent != null ? Number(s.amountSpent).toFixed(2) : '',
         s.pointsEarned != null ? s.pointsEarned : '',
+        s.previousPointsBalance != null ? s.previousPointsBalance : '',
         s.newPointsBalance != null ? s.newPointsBalance : '',
       ];
     });
@@ -67,11 +85,10 @@ export default function ScanHistory() {
     const now = new Date();
     const montrealDate = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/Toronto',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
+      year: 'numeric', month: '2-digit', day: '2-digit',
     }).format(now);
-    a.download = `scan-history-${montrealDate}.csv`;
+    const configSlug = (activeConfigName || 'all').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    a.download = `scan-history-${configSlug}-${montrealDate}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
