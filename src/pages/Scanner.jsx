@@ -14,6 +14,7 @@ import {
   getProxyUrl,
   getSelectedConfig,
   checkPassByBarcode,
+  fetchPassDetails,
   createAppScan,
 } from '../components/api/passcreatorApi';
 import {
