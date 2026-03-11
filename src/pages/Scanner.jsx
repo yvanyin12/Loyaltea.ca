@@ -345,54 +345,57 @@ export default function Scanner() {
     let appScanId = null;
     let errorMsg = '';
 
-    try {
-      const trackResponse = await createAppScan(trackPayload);
-      log('ok', `/track raw response: ${JSON.stringify(trackResponse)}`);
-      appScanSubmitted = true;
-      appScanId = trackResponse?.appScanId || trackResponse?.identifier || trackResponse?.id || null;
-      log('ok', `App scan tracked ✓ appScanId="${appScanId}"`);
-    } catch (e) {
-      log('error', `App scan tracking FAILED: ${e.message}`);
-      errorMsg = e.message;
-    }
+    // Fire off the track call in background (non-blocking)
+    createAppScan(trackPayload)
+      .then((trackResponse) => {
+        log('ok', `/track raw response: ${JSON.stringify(trackResponse)}`);
+        appScanSubmitted = true;
+        appScanId = trackResponse?.appScanId || trackResponse?.identifier || trackResponse?.id || null;
+        log('ok', `App scan tracked ✓ appScanId="${appScanId}"`);
+      })
+      .catch((e) => {
+        log('error', `App scan tracking FAILED: ${e.message}`);
+        errorMsg = e.message;
+      })
+      .finally(() => {
+        // Save to database after track completes (still non-blocking to UI)
+        base44.entities.ScanLog.create({
+          barcodeValue,
+          passIdentifier: passData?.identifier || '',
+          appConfigurationId: configId,
+          appConfigurationName: config?.name || '',
+          scanResult: 'valid',
+          isVoided: false,
+          appScanSubmitted,
+          appScanId: appScanId || '',
+          errorMessage: errorMsg,
+          loyaltyMode: 'stamps',
+          holderFirstName: holderInfo.firstName,
+          holderLastName: holderInfo.lastName,
+          holderName: holderInfo.name,
+          holderEmail: holderInfo.email,
+          holderPhone: holderInfo.phone,
+        }).then((created) => {
+          if (created?.id) {
+            setPendingScanId(created.id);
+            if (appScanSubmitted) {
+              setShowAmountInput(true);
+            }
+          }
+        }).catch((e) => log('warn', `ScanLog save failed: ${e.message}`));
+      });
 
+    // Show result immediately without waiting for track/save
     setConfirmPending(null);
-     setConfirmLoading(false);
+    setConfirmLoading(false);
 
-     setResult({
-       status: 'valid',
-       barcodeValue,
-       passData,
-       error: '',
-       appScanSubmitted,
-     });
-
-     // Save to database in background (non-blocking)
-     log('info', `[STAMPS] Saving ScanLog to database...`);
-     base44.entities.ScanLog.create({
-       barcodeValue,
-       passIdentifier: passData?.identifier || '',
-       appConfigurationId: configId,
-       appConfigurationName: config?.name || '',
-       scanResult: 'valid',
-       isVoided: false,
-       appScanSubmitted,
-       appScanId: appScanId || '',
-       errorMessage: errorMsg,
-       loyaltyMode: 'stamps',
-       holderFirstName: holderInfo.firstName,
-       holderLastName: holderInfo.lastName,
-       holderName: holderInfo.name,
-       holderEmail: holderInfo.email,
-       holderPhone: holderInfo.phone,
-     }).then((created) => {
-       if (created?.id) {
-         setPendingScanId(created.id);
-         if (appScanSubmitted) {
-           setShowAmountInput(true);
-         }
-       }
-     }).catch((e) => log('warn', `ScanLog save failed: ${e.message}`));
+    setResult({
+      status: 'valid',
+      barcodeValue,
+      passData,
+      error: '',
+      appScanSubmitted: true, // Optimistically assume success like Passcreator does
+    });
     };
 
   const handleCancelScan = () => {
