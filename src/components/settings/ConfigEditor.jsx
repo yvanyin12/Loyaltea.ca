@@ -4,8 +4,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Check } from 'lucide-react';
 
+function inferLoyaltyType(config) {
+  if (config.loyaltyType) return config.loyaltyType.toLowerCase();
+  const name = (config.name || '').toLowerCase();
+  if (name.includes('stamp')) return 'stamps';
+  if (name.includes('point') || name.includes('loyalty')) return 'points';
+  return 'points';
+}
+
 export default function ConfigEditor({ config, onUpdate, onClose }) {
-  const [loyaltyType, setLoyaltyType] = useState(config.loyaltyType ?? 'points');
+  const [loyaltyType, setLoyaltyType] = useState(() => inferLoyaltyType(config));
   // null = nothing selected yet (forces user to pick for points mode)
   const [rewardPercent, setRewardPercent] = useState(
     config.rewardPercent != null ? config.rewardPercent : null
