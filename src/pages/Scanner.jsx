@@ -71,11 +71,7 @@ export default function Scanner() {
     let errorMsg = '';
 
     try {
-      log('info', `POST ${proxyUrl}/validate  { barcodeValue: "${barcodeValue}" }`);
       const checkData = await checkPassByBarcode(barcodeValue);
-      log('ok', `VALIDATE response: ${JSON.stringify(checkData)}`);
-      log('info', `  → identifier: ${checkData.identifier ?? '(missing)'}  voided: ${checkData.voided}  error: "${checkData.error || ''}"`);
-
       const responseError = checkData.error;
       const isVoided = checkData.voided;
 
@@ -92,18 +88,12 @@ export default function Scanner() {
         log('ok', `Pass is VALID — identifier: "${checkData.identifier}"`);
 
         // Fetch full pass details to get storedValue and passTemplateGuid
-        log('info', `Fetching full pass details for "${checkData.identifier}"...`);
         try {
           const fullPass = await fetchPassDetails(checkData.identifier);
-          log('ok', `RAW fullPass response: ${JSON.stringify(fullPass)}`);
           passData = { ...checkData, ...fullPass };
         } catch (e) {
           log('error', `Failed to fetch full pass details: ${e.message}`);
         }
-
-        log('info', `RAW passData (merged): ${JSON.stringify(passData)}`);
-        log('info', `passData.passTemplateGuid: "${passData.passTemplateGuid}"`);
-        log('info', `passData.storedValue: ${JSON.stringify(passData.storedValue)}`);
       }
     } catch (err) {
       scanResult = 'error';
