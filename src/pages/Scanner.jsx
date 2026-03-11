@@ -324,6 +324,7 @@ export default function Scanner() {
     const { passData, configId, barcodeValue, scanMode } = confirmPending;
     const config = getSelectedConfig();
 
+    log('info', `═══ STAMPS TRANSACTION START ═══`);
     log('info', `[CONFIRMED] Submitting scan to Passcreator...`);
 
     const resolvedScanStatus = scanMode === 0 ? 0 : 2; // 0 = void, 2 = attendance
