@@ -50,10 +50,12 @@ export default function Scanner() {
   const proxyUrl = getProxyUrl();
 
   const log = (level, message) => {
+    const timestamp = new Date().toISOString().split('T')[1].split('.')[0]; // HH:MM:SS
+    const fullMsg = `[${timestamp}] ${message}`;
     console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](
-      `[Scanner] ${message}`
+      `[Scanner] ${fullMsg}`
     );
-    setDebugLogs((prev) => [...prev, { level, message }]);
+    setDebugLogs((prev) => [...prev, { level, message: fullMsg }]);
   };
 
 
