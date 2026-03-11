@@ -179,42 +179,56 @@ export async function undoStampsScan(originalScan) {
  * Undo a POINTS scan.
  * 1. Reverts the stored value in Passcreator to previousPointsBalance.
  * 2. Deletes the app scan record (best-effort).
- * 3. Creates an audit reversal record with negative points/amount.
- * 4. Refetches pass details to ensure fresh state.
+ * 3. Polls for confirmation that the value was updated.
+ * 4. Creates an audit reversal record with negative points/amount.
  */
 export async function undoPointsScan(originalScan) {
   const proxyUrl = getProxyUrl();
   const pointsEarned = originalScan.pointsEarned || 0;
+  const submitTime = performance.now();
+
+  console.log(`[Undo Points] ── BEGIN at ${submitTime.toFixed(0)}ms ──────────────────────────`);
 
   // Revert to the balance that existed before the original scan
   const revertedBalance =
     originalScan.previousPointsBalance ??
     (originalScan.newPointsBalance - pointsEarned);
 
+  console.log(`[Undo Points] Target balance after undo: ${revertedBalance}`);
+
   // 1. Revert stored value in Passcreator
   if (originalScan.passIdentifier) {
+    const updateStartTime = performance.now();
+    console.log(`[Undo Points] Sending /update-stored-value at ${updateStartTime.toFixed(0)}ms...`);
     await updateStoredValue(proxyUrl, originalScan.passIdentifier, revertedBalance);
+    const updateEndTime = performance.now();
+    console.log(`[Undo Points] Passcreator confirmed undo at ${updateEndTime.toFixed(0)}ms (${(updateEndTime - updateStartTime).toFixed(0)}ms request time)`);
   }
 
   // 2. Delete app scan (best-effort — don't fail the whole undo if this errors)
   if (originalScan.appScanId) {
+    const deleteStartTime = performance.now();
+    console.log(`[Undo Points] Deleting app scan at ${deleteStartTime.toFixed(0)}ms...`);
     try {
       await deleteAppScan(originalScan.appScanId);
+      const deleteEndTime = performance.now();
+      console.log(`[Undo Points] Delete confirmed at ${deleteEndTime.toFixed(0)}ms (${(deleteEndTime - deleteStartTime).toFixed(0)}ms)`);
     } catch (e) {
-      console.warn('[Undo] Could not delete app scan record:', e.message);
+      console.warn('[Undo Points] Could not delete app scan record:', e.message);
     }
   }
 
-  // 3. Refetch pass details to confirm updated state
+  // 3. Poll for updated value until it matches expected state or timeout
+  let pollResult = null;
   if (originalScan.passIdentifier) {
-    try {
-      const verifyData = await fetchPassDetails(originalScan.passIdentifier);
-      const pointsVerified = parseInt(verifyData?.storedValue ?? 0, 10);
-      console.log('[Undo Points] Verification: point balance now =', pointsVerified);
-    } catch (e) {
-      console.warn('[Undo Points] Could not verify final point balance:', e.message);
-    }
+    console.log(`[Undo Points] Starting polling cycle at ${performance.now().toFixed(0)}ms...`);
+    pollResult = await pollPassDetailsUntilUpdated(originalScan.passIdentifier, revertedBalance, 5, 1000);
+    console.log(`[Undo Points] Poll result:`, JSON.stringify(pollResult));
   }
+
+  const finalTime = performance.now();
+  const totalElapsed = finalTime - submitTime;
+  console.log(`[Undo Points] ── COMPLETE at ${finalTime.toFixed(0)}ms (${totalElapsed.toFixed(0)}ms total) ──`);
 
   // 4. Create reversal audit record
   return finalizeUndo(originalScan, {
