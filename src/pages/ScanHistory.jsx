@@ -133,18 +133,12 @@ export default function ScanHistory() {
         
         if (firstScan.updated_date) {
           const dateStr = firstScan.updated_date;
-          const updatedDate = new Date(dateStr);
-          const updatedMs = updatedDate.getTime();
-          const nowMs = Date.now();
-          const ageMs = nowMs - updatedMs;
+          const ageMs = getTimestampAge(dateStr);
           
-          if (isNaN(updatedMs)) {
-            addLog(`  [TS ERROR] Updated: INVALID TIMESTAMP "${dateStr}"`);
-          } else if (ageMs < 0) {
-            const futureSecs = (-ageMs/1000).toFixed(1);
-            addLog(`  [TS ERROR] Updated: ${futureSecs}s in the future (server clock ahead of device?)`);
-          } else {
+          if (ageMs !== null && ageMs >= 0) {
             addLog(`  Updated: ${(ageMs/1000).toFixed(1)}s ago`);
+          } else if (ageMs === null) {
+            addLog(`  [TS ERROR] Updated: Failed to parse "${dateStr}"`);
           }
         }
       }
