@@ -151,6 +151,9 @@ export default function Scanner() {
       log('error', `Failed: ${err.message}`);
     }
 
+    const stateUpdateTime = performance.now();
+    log('info', `[STATE UPDATE] Setting result state at ${stateUpdateTime.toFixed(0)}ms`);
+    
     setResult({
       status: scanResult,
       barcodeValue,
@@ -158,6 +161,8 @@ export default function Scanner() {
       error: errorMsg,
       appScanSubmitted: false,
     });
+    
+    log('info', `[STATE UPDATE] Result state queued (React will render next)`);
 
     // Extract holder info from Passcreator response
     // Priority: 1) passFieldData object/array  2) passData text block  3) top-level fields
