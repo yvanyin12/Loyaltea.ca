@@ -24,7 +24,6 @@ import {
   hasStoredValue,
   calculatePoints,
   updateStoredValue,
-  triggerPassPush,
 } from '../components/api/pointsApi';
 import PointsConfirmation from '../components/scanner/PointsConfirmation';
 
@@ -470,23 +469,15 @@ export default function Scanner() {
       log('info', `POST ${proxyUrl}/update-stored-value`);
       log('info', `Payload: ${JSON.stringify(svPayload)}`);
       try {
-         log('info', `[TIMING] Stored value update request SENDING...`);
-         const svResponse = await updateStoredValue(proxyUrl, passData?.identifier, newBalance);
-         log('ok', `[TIMING] Stored value update response RECEIVED`);
-         log('ok', `Response: ${JSON.stringify(svResponse)}`);
-         log('ok', `Stored value updated to ${newBalance} ✓`);
-
-         // CRITICAL: Trigger wallet push after stored value update
-         log('info', `[WALLET] Triggering pass push/update notification...`);
-         try {
-           const pushResult = await triggerPassPush(proxyUrl, passData?.identifier);
-           log('ok', `[WALLET] Pass push triggered: ${JSON.stringify(pushResult)}`);
-         } catch (e) {
-           log('warn', `[WALLET] Could not trigger push (non-critical): ${e.message}`);
-         }
-       } catch (e) {
-         log('error', `FAILED to update stored value: ${e.message}`);
-       }
+        log('info', `[TIMING] Stored value update request SENDING...`);
+        const svResponse = await updateStoredValue(proxyUrl, passData?.identifier, newBalance);
+        log('ok', `[TIMING] Stored value update response RECEIVED`);
+        log('ok', `Response: ${JSON.stringify(svResponse)}`);
+        log('ok', `Stored value updated to ${newBalance} ✓`);
+        // NOTE: Wallet delay after this point is Passcreator push propagation + Apple/Google Wallet delivery
+      } catch (e) {
+        log('error', `FAILED to update stored value: ${e.message}`);
+      }
 
       // Save to database
       log('info', `[POINTS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
