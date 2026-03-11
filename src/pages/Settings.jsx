@@ -155,6 +155,27 @@ export default function Settings() {
             onEdit={(cfg) => setEditingConfig(cfg)}
           />
         </div>
+
+        {/* ── Preview Restaurant Mode ── */}
+        <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-3">
+          <div>
+            <h2 className="font-semibold text-white">Restaurant Handoff</h2>
+            <p className="text-slate-500 text-xs mt-0.5">
+              Preview exactly what a restaurant user will see. An amber banner will appear so you can exit back to admin mode at any time.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={handlePreviewRestaurant}
+            className="w-full gap-2 border-amber-600/40 text-amber-400 hover:bg-amber-600/10 hover:text-amber-300"
+          >
+            <Eye className="w-4 h-4" />
+            Preview Restaurant Mode
+          </Button>
+          <p className="text-slate-600 text-xs">
+            Restaurant users (role: user) always see this clean view — they can never access Settings or any technical setup details.
+          </p>
+        </div>
       </div>
 
       <AddConfigSheet
