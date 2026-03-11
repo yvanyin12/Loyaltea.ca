@@ -71,6 +71,21 @@ export default function Scanner() {
     }
   }, [result]);
 
+  // Listen for reversals (undos) from History page and clear stale result
+  useEffect(() => {
+    const unsubscribe = base44.entities.ScanLog.subscribe((event) => {
+      if (event.type === 'create' && event.data?.isReversal) {
+        log('warn', `[UNDO DETECTED] Reversal detected on History page — clearing stale Scanner result`);
+        log('warn', `[UNDO DETECTED] Reversed scan ID: ${event.data?.reversedScanId}`);
+        // Clear the stale result so user doesn't see outdated balance
+        setResult(null);
+        setProcessing(false);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
 
 
   const handleScan = async (barcodeValue) => {
