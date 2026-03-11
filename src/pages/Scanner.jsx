@@ -479,30 +479,6 @@ export default function Scanner() {
         log('error', `FAILED to update stored value: ${e.message}`);
       }
 
-      // Save to database
-      log('info', `[POINTS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
-      await base44.entities.ScanLog.create({
-        barcodeValue,
-        passIdentifier: passData?.identifier || '',
-        appConfigurationId: configId,
-        appConfigurationName: configName,
-        scanResult: 'valid',
-        isVoided: false,
-        appScanSubmitted,
-        appScanId: appScanId || '',
-        loyaltyMode: 'points',
-        amountSpent,
-        pointsEarned,
-        previousPointsBalance: currentPoints,
-        newPointsBalance: newBalance,
-        isUndone: false,
-        holderFirstName: holderInfo.firstName,
-        holderLastName: holderInfo.lastName,
-        holderName: holderInfo.name,
-        holderEmail: holderInfo.email,
-        holderPhone: holderInfo.phone,
-      });
-
       // CRITICAL: Fetch updated pass data immediately after successful points scan
       log('info', `[REFRESH] Fetching updated pass after points scan...`);
       let finalPassData = passData;
@@ -529,6 +505,30 @@ export default function Scanner() {
       });
 
       setPointsFlow(null);
+
+      // Save to database in background (non-blocking)
+      log('info', `[POINTS] Saving ScanLog to database...`);
+      base44.entities.ScanLog.create({
+        barcodeValue,
+        passIdentifier: passData?.identifier || '',
+        appConfigurationId: configId,
+        appConfigurationName: configName,
+        scanResult: 'valid',
+        isVoided: false,
+        appScanSubmitted,
+        appScanId: appScanId || '',
+        loyaltyMode: 'points',
+        amountSpent,
+        pointsEarned,
+        previousPointsBalance: currentPoints,
+        newPointsBalance: newBalance,
+        isUndone: false,
+        holderFirstName: holderInfo.firstName,
+        holderLastName: holderInfo.lastName,
+        holderName: holderInfo.name,
+        holderEmail: holderInfo.email,
+        holderPhone: holderInfo.phone,
+      }).catch((e) => log('warn', `ScanLog save failed: ${e.message}`));
       } catch (e) {
       log('error', `Points flow failed: ${e.message}`);
       }
