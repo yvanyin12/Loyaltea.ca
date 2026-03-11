@@ -9,6 +9,7 @@ import UndoConfirmDialog from '../components/history/UndoConfirmDialog';
 import DebugPanel from '../components/history/DebugPanel';
 import { undoScan } from '../components/api/undoApi';
 import { getSelectedConfig } from '../components/api/passcreatorApi';
+import { parseTimestamp, getTimestampAge, isNaiveTimestampString } from '../components/api/timestampUtils';
 
 export default function ScanHistory() {
   const [scans, setScans] = useState([]);
