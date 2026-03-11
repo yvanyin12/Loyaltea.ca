@@ -17,35 +17,49 @@ import { base44 } from '@/api/base44Client';
 // Polling helper to refetch pass details until the value matches expected state or timeout
 async function pollPassDetailsUntilUpdated(passIdentifier, expectedValue, maxRetries = 5, delayMs = 1000) {
   const pollStartTime = performance.now();
-  console.log(`[Undo Poll] Starting poll at ${pollStartTime.toFixed(0)}ms, expecting value: ${expectedValue}`);
+  console.log(`\n[Phone REFETCH] ========== Starting poll cycle at ${pollStartTime.toFixed(0)}ms ==========`);
+  console.log(`[Phone REFETCH] Expected value after undo: ${expectedValue}`);
+  console.log(`[Phone REFETCH] Will retry up to ${maxRetries} times with ${delayMs}ms delay`);
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     if (attempt > 1) {
-      console.log(`[Undo Poll] Waiting ${delayMs}ms before attempt ${attempt}/${maxRetries}...`);
+      const waitTime = performance.now();
+      console.log(`[Phone REFETCH] [Attempt ${attempt}] Waiting ${delayMs}ms before retry...`);
       await new Promise((resolve) => setTimeout(resolve, delayMs));
+      const resumeTime = performance.now();
+      console.log(`[Phone REFETCH] [Attempt ${attempt}] Resumed at ${resumeTime.toFixed(0)}ms (waited ${(resumeTime - waitTime).toFixed(0)}ms)`);
     }
 
     const attemptTime = performance.now();
-    console.log(`[Undo Poll] Attempt ${attempt}/${maxRetries} at ${attemptTime.toFixed(0)}ms (${(attemptTime - pollStartTime).toFixed(0)}ms elapsed)`);
+    console.log(`[Phone REFETCH] [Attempt ${attempt}/${maxRetries}] Fetching pass details at ${attemptTime.toFixed(0)}ms...`);
 
     try {
+      const fetchStart = performance.now();
       const passData = await fetchPassDetails(passIdentifier);
+      const fetchEnd = performance.now();
+      
+      console.log(`[Phone REFETCH] [Attempt ${attempt}] Response received at ${fetchEnd.toFixed(0)}ms (${(fetchEnd - fetchStart).toFixed(0)}ms latency)`);
+      console.log(`[Phone REFETCH] [Attempt ${attempt}] RAW RESPONSE:`, JSON.stringify(passData, null, 2));
+      
       const currentValue = parseInt(passData?.storedValue ?? 0, 10);
-      const fetchTime = performance.now();
-      console.log(`[Undo Poll] Fetched value: ${currentValue} at ${fetchTime.toFixed(0)}ms (${(fetchTime - attemptTime).toFixed(0)}ms fetch time)`);
+      console.log(`[Phone REFETCH] [Attempt ${attempt}] Parsed storedValue: ${currentValue}`);
+      console.log(`[Phone REFETCH] [Attempt ${attempt}] Expected: ${expectedValue}, Match: ${currentValue === expectedValue ? '✓ YES' : '✗ NO'}`);
 
       if (currentValue === expectedValue) {
-        const totalElapsed = fetchTime - pollStartTime;
-        console.log(`[Undo Poll] ✓ Value matched! Took ${totalElapsed.toFixed(0)}ms total.`);
+        const totalElapsed = fetchEnd - pollStartTime;
+        console.log(`[Phone REFETCH] ✓✓✓ SUCCESS on attempt ${attempt}: Value matched in ${totalElapsed.toFixed(0)}ms`);
         return { success: true, value: currentValue, elapsedMs: totalElapsed, attempts: attempt };
       }
 
       if (attempt === maxRetries) {
-        console.warn(`[Undo Poll] ✗ Max retries reached. Final value: ${currentValue}, expected: ${expectedValue}`);
-        return { success: false, value: currentValue, expectedValue, elapsedMs: fetchTime - pollStartTime, attempts: attempt };
+        const totalElapsed = fetchEnd - pollStartTime;
+        console.warn(`[Phone REFETCH] ✗✗✗ FAILED: Max retries (${maxRetries}) reached after ${totalElapsed.toFixed(0)}ms`);
+        console.warn(`[Phone REFETCH] Final value: ${currentValue}, Expected: ${expectedValue}, Mismatch: ${currentValue - expectedValue}`);
+        return { success: false, value: currentValue, expectedValue, elapsedMs: totalElapsed, attempts: attempt };
       }
     } catch (e) {
-      console.warn(`[Undo Poll] Attempt ${attempt} failed:`, e.message);
+      const errTime = performance.now();
+      console.warn(`[Phone REFETCH] [Attempt ${attempt}] EXCEPTION at ${errTime.toFixed(0)}ms:`, e.message);
     }
   }
 
