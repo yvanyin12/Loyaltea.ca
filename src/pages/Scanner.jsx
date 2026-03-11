@@ -442,6 +442,7 @@ export default function Scanner() {
     setPendingScanId(null);
     setConfirmPending(null);
     setPointsFlow(null);
+    setHolderInfo({ firstName: '', lastName: '', name: '', email: '', phone: '' });
   };
 
   if (!proxyUrl) {
