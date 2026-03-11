@@ -5,11 +5,16 @@ import { Label } from '@/components/ui/label';
 import { ChevronDown, Check } from 'lucide-react';
 
 export default function ConfigEditor({ config, onUpdate, onClose }) {
+  const [loyaltyType, setLoyaltyType] = useState(config.loyaltyType ?? 'points');
   const [rewardPercent, setRewardPercent] = useState(config.rewardPercent ?? 0.10);
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
-    const updated = { ...config, rewardPercent: parseFloat(rewardPercent) || 0.10 };
+    const updated = {
+      ...config,
+      loyaltyType,
+      rewardPercent: loyaltyType === 'points' ? (parseFloat(rewardPercent) || 0.10) : config.rewardPercent,
+    };
     onUpdate(updated);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -30,69 +35,81 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
           <p className="text-slate-400 text-xs mt-1 font-mono">{config.configurationId}</p>
         </div>
 
-        <div className="space-y-3 border-t border-slate-800 pt-4">
-          <div>
-            <Label className="text-slate-300 text-sm font-medium">Reward Percentage</Label>
-            <p className="text-slate-500 text-xs mt-0.5">
-              Points earned = amount spent × reward% × 1000
-            </p>
-          </div>
-
-          {/* Presets */}
-          <div className="flex gap-2 flex-wrap">
-            {presets.map((preset) => (
+        {/* Loyalty Type */}
+        <div className="space-y-2 border-t border-slate-800 pt-4">
+          <Label className="text-slate-300 text-sm font-medium">Loyalty Type</Label>
+          <p className="text-slate-500 text-xs">Select whether this configuration uses Points or Stamps.</p>
+          <div className="flex gap-2">
+            {['points', 'stamps'].map((type) => (
               <button
-                key={preset.value}
-                onClick={() => setRewardPercent(preset.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  parseFloat(rewardPercent) === preset.value
-                    ? 'bg-blue-600 text-white'
+                key={type}
+                onClick={() => setLoyaltyType(type)}
+                className={`flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition-all ${
+                  loyaltyType === type
+                    ? type === 'points' ? 'bg-blue-600 text-white' : 'bg-amber-600 text-white'
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                 }`}
               >
-                {preset.label}
+                {type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
           </div>
-
-          {/* Custom input */}
-          <div>
-            <Label className="text-slate-400 text-xs">Custom value (decimal)</Label>
-            <Input
-              type="number"
-              min="0"
-              max="1"
-              step="0.01"
-              value={rewardPercent}
-              onChange={(e) => setRewardPercent(e.target.value)}
-              className="bg-slate-800 border-slate-700 text-white mt-1"
-              placeholder="0.10"
-            />
-          </div>
-
-          {/* Example calculation */}
-          <div className="bg-slate-800/50 rounded-lg p-3 text-xs space-y-1">
-            <p className="text-slate-400">
-              Example: $10 spent × {(parseFloat(rewardPercent) || 0.10).toFixed(2)} × 1000 ={' '}
-              <span className="text-blue-400 font-semibold">
-                {Math.round((parseFloat(rewardPercent) || 0.10) * 10 * 1000).toLocaleString()} pts
-              </span>
-            </p>
-          </div>
         </div>
 
+        {/* Reward % — only shown for points */}
+        {loyaltyType === 'points' && (
+          <div className="space-y-3 border-t border-slate-800 pt-4">
+            <div>
+              <Label className="text-slate-300 text-sm font-medium">Reward Percentage</Label>
+              <p className="text-slate-500 text-xs mt-0.5">
+                Points earned = amount spent × reward% × 1000
+              </p>
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+              {presets.map((preset) => (
+                <button
+                  key={preset.value}
+                  onClick={() => setRewardPercent(preset.value)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    parseFloat(rewardPercent) === preset.value
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            <div>
+              <Label className="text-slate-400 text-xs">Custom value (decimal)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                value={rewardPercent}
+                onChange={(e) => setRewardPercent(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white mt-1"
+                placeholder="0.10"
+              />
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-3 text-xs">
+              <p className="text-slate-400">
+                Example: $10 × {(parseFloat(rewardPercent) || 0.10).toFixed(2)} × 1000 ={' '}
+                <span className="text-blue-400 font-semibold">
+                  {Math.round((parseFloat(rewardPercent) || 0.10) * 10 * 1000).toLocaleString()} pts
+                </span>
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2 border-t border-slate-800 pt-4">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="flex-1"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            className="flex-1 gap-2"
-          >
+          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button onClick={handleSave} className="flex-1 gap-2">
             {saved ? <Check className="w-4 h-4" /> : 'Save'}
           </Button>
         </div>
