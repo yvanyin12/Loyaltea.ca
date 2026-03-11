@@ -122,10 +122,20 @@ export default function Scanner() {
         log('ok', `Pass is VALID — identifier: "${checkData.identifier}"`);
 
         // Fetch full pass details to get storedValue and passTemplateGuid
-        log('info', `Fetching full pass details for "${checkData.identifier}"...`);
+        const fetchStartTime = performance.now();
+        log('info', `Fetching full pass details for "${checkData.identifier}" at ${fetchStartTime.toFixed(0)}ms...`);
         try {
           const fullPass = await fetchPassDetails(checkData.identifier);
-          log('ok', `RAW fullPass response: ${JSON.stringify(fullPass)}`);
+          const fetchEndTime = performance.now();
+          const latency = fetchEndTime - fetchStartTime;
+          
+          log('ok', `✓ RAW fullPass response (latency: ${latency.toFixed(0)}ms): ${JSON.stringify(fullPass)}`);
+          
+          // Log the current stored value that will be displayed to user
+          const storedVal = fullPass?.storedValue ?? checkData?.storedValue;
+          log('info', `[DISPLAY VALUE] Current storedValue from Passcreator: ${storedVal}`);
+          log('info', `[DISPLAY VALUE] This will be shown to user in next screen`);
+          
           passData = { ...checkData, ...fullPass };
         } catch (e) {
           log('error', `Failed to fetch full pass details: ${e.message}`);
