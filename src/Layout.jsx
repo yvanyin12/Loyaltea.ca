@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { ScanLine, History, Settings } from 'lucide-react';
+import DebugLogPanel from '@/components/DebugLogPanel';
 
 const NAV_ITEMS = [
   { label: 'Scanner', page: 'Scanner', icon: ScanLine },
