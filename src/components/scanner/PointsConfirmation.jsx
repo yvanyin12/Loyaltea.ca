@@ -39,6 +39,7 @@ export default function PointsConfirmation({
       <div className="text-center space-y-1">
         <h2 className="text-white font-bold text-lg">Points Loyalty</h2>
         <p className="text-slate-400 text-sm">{configName}</p>
+        <p className="text-amber-400 text-xs font-semibold">Enter purchase amount to calculate &amp; apply points</p>
       </div>
 
       {/* Pass ID */}
