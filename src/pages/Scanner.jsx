@@ -185,18 +185,54 @@ export default function Scanner() {
       log('info', `inferred loyalty type: ${detectedLoyaltyType.toUpperCase()}`);
       log('info', `reason: ${inferReason}`);
 
+      // Config loyalty type (same inference rules applied to the config side)
+      const configSavedType = config?.loyaltyType ? config.loyaltyType.toLowerCase() : null;
+      const configName2 = (config?.name || '').toLowerCase();
+      let configLoyaltyType;
+      if (configSavedType) {
+        configLoyaltyType = configSavedType;
+      } else if (configName2.includes('stamp')) {
+        configLoyaltyType = 'stamps';
+      } else if (configName2.includes('point')) {
+        configLoyaltyType = 'points';
+      } else {
+        configLoyaltyType = detectedLoyaltyType; // same as pass — no conflict
+      }
+
+      log('info', `--- CROSS-VALIDATION ---`);
+      log('info', `selected config name: "${config?.name}"`);
+      log('info', `selected config loyalty type: ${configLoyaltyType.toUpperCase()}`);
+      log('info', `scanned pass template name: "${passData?.passTemplateName ?? 'not set'}"`);
+      log('info', `scanned pass template guid: "${passTemplateGuid}"`);
+      log('info', `inferred pass loyalty type: ${detectedLoyaltyType.toUpperCase()}`);
+
+      if (configLoyaltyType !== detectedLoyaltyType) {
+        const decision = 'INVALID_MISMATCH';
+        log('error', `final decision: ${decision}`);
+        log('error', `Reason: config is ${configLoyaltyType.toUpperCase()} but scanned pass is ${detectedLoyaltyType.toUpperCase()} — type mismatch`);
+        setResult({
+          status: 'error',
+          barcodeValue,
+          passData,
+          error: `Configuration mismatch: this config is set up for ${configLoyaltyType.toUpperCase()} but the scanned pass is a ${detectedLoyaltyType.toUpperCase()} template.`,
+          appScanSubmitted: false,
+        });
+        setProcessing(false);
+        return;
+      }
+
       if (detectedLoyaltyType === 'stamps') {
-        log('info', `branch taken: STAMPS_FLOW`);
-        log('info', `→ adding 1 stamp via attendance scan`);
+        log('info', `final decision: VALID_STAMPS`);
+        log('info', `branch taken: STAMPS_FLOW → adding 1 stamp via attendance scan`);
         const scanMode = config?.scanMode ?? 1;
         setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult });
       } else {
-        log('info', `branch taken: POINTS_FLOW`);
+        log('info', `final decision: VALID_POINTS`);
+        log('info', `branch taken: POINTS_FLOW → opening Points Loyalty screen`);
         const currentPoints = getCurrentStoredValue(passData);
         const rewardPercent = (typeof config?.rewardPercent === 'number' && !isNaN(config.rewardPercent))
           ? config.rewardPercent
           : 0.10;
-        log('ok', `→ opening Points Loyalty screen`);
         log('info', `currentBalance: ${currentPoints}, rewardPercent: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
         setPointsFlow({ passData, configId, barcodeValue, currentPoints, rewardPercent, configName: config?.name || '' });
       }
