@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { ScanLine, History, Settings } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import RestaurantModePreview from './components/settings/RestaurantModePreview';
 
 const BASE_NAV = [
   { label: 'Scanner', page: 'Scanner', icon: ScanLine },
@@ -17,27 +16,18 @@ const ADMIN_NAV = [
 
 export default function Layout({ children, currentPageName }) {
   const [isAdmin, setIsAdmin] = useState(false);
-  const [previewRestaurant, setPreviewRestaurant] = useState(false);
 
   useEffect(() => {
-    const preview = localStorage.getItem('pc_preview_restaurant') === 'true';
-    setPreviewRestaurant(preview);
-
     base44.auth.me().then((user) => {
       setIsAdmin(user?.role === 'admin');
     }).catch(() => {});
   }, []);
 
-  // Effective mode: admin sees admin UI unless they're previewing restaurant mode
-  const showAdminUI = isAdmin && !previewRestaurant;
-  const navItems = showAdminUI ? ADMIN_NAV : BASE_NAV;
+  const navItems = isAdmin ? ADMIN_NAV : BASE_NAV;
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
-      {/* Preview banner — only visible to admins in preview mode */}
-      {isAdmin && previewRestaurant && <RestaurantModePreview />}
-
-      <main className={`flex-1 pb-20 ${isAdmin && previewRestaurant ? 'pt-10' : ''}`}>
+      <main className="flex-1 pb-20">
         {children}
       </main>
 

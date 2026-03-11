@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CheckCircle2, Plus, Eye } from 'lucide-react';
+import { CheckCircle2, Plus } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import {
   getProxyUrl,
@@ -46,7 +46,6 @@ function RestaurantSettings() {
 
 export default function Settings() {
   const [isAdmin, setIsAdmin] = useState(null); // null = loading
-  const [previewRestaurant, setPreviewRestaurant] = useState(false);
   const [proxyUrl, setProxyUrlState] = useState(getProxyUrl());
   const [configs, setConfigs] = useState(getSavedConfigs());
   const [proxySaved, setProxySaved] = useState(false);
@@ -54,16 +53,10 @@ export default function Settings() {
   const [editingConfig, setEditingConfig] = useState(null);
 
   useEffect(() => {
-    setPreviewRestaurant(localStorage.getItem('pc_preview_restaurant') === 'true');
     base44.auth.me().then((user) => {
       setIsAdmin(user?.role === 'admin');
     }).catch(() => setIsAdmin(false));
   }, []);
-
-  const handlePreviewRestaurant = () => {
-    localStorage.setItem('pc_preview_restaurant', 'true');
-    window.location.reload();
-  };
 
   const refresh = () => setConfigs(getSavedConfigs());
 
@@ -97,9 +90,7 @@ export default function Settings() {
 
   if (isAdmin === null) return null; // loading
 
-  // Non-admins always see the restaurant view
-  // Admins previewing restaurant mode also see it
-  if (!isAdmin || previewRestaurant) return <RestaurantSettings />;
+  if (!isAdmin) return <RestaurantSettings />;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -154,27 +145,6 @@ export default function Settings() {
             onRemove={handleRemove}
             onEdit={(cfg) => setEditingConfig(cfg)}
           />
-        </div>
-
-        {/* ── Preview Restaurant Mode ── */}
-        <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-3">
-          <div>
-            <h2 className="font-semibold text-white">Restaurant Handoff</h2>
-            <p className="text-slate-500 text-xs mt-0.5">
-              Preview exactly what a restaurant user will see. An amber banner will appear so you can exit back to admin mode at any time.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={handlePreviewRestaurant}
-            className="w-full gap-2 border-amber-600/40 text-amber-400 hover:bg-amber-600/10 hover:text-amber-300"
-          >
-            <Eye className="w-4 h-4" />
-            Preview Restaurant Mode
-          </Button>
-          <p className="text-slate-600 text-xs">
-            Restaurant users (role: user) always see this clean view — they can never access Settings or any technical setup details.
-          </p>
         </div>
       </div>
 
