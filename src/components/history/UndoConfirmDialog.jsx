@@ -111,7 +111,6 @@ export default function UndoConfirmDialog({ scan, onConfirm, onCancel, loading }
             )}
           </Button>
         </div>
-        </div>
       </div>
     </div>
   );
