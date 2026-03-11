@@ -164,7 +164,9 @@ export default function Scanner() {
       const textName      = parseTextLine('(?:(?:customer\\s*)?name|full\\s*name|nom)');
       const textEmail     = parseTextLine('(?:email(?:\\s*address)?|courriel|mail)');
       const textPhone     = parseTextLine('(?:phone(?:\\s*number)?|mobile|telephone|tel|cell|handy)');
-      log('info', `passData text block parsed → firstName: "${textFirstName}" | lastName: "${textLastName}" | name: "${textName}" | email: "${textEmail}" | phone: "${textPhone}"`);
+      // In Passcreator, "NAME:" means first name when "LAST NAME:" also exists
+      const effectiveTextFirstName = textFirstName || (textLastName ? textName : '');
+      log('info', `passData text block parsed → firstName: "${effectiveTextFirstName}" (raw: "${textFirstName}", NAME: "${textName}") | lastName: "${textLastName}" | email: "${textEmail}" | phone: "${textPhone}"`);
 
       // --- SOURCE 3: top-level / nested objects (last resort) ---
       const sources = [p, p.holder, p.customer, p.passholder, p.owner].filter(Boolean);
