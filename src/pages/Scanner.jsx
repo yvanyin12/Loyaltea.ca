@@ -60,15 +60,8 @@ export default function Scanner() {
     setProcessing(true);
     setDebugLogs([]);
 
-    // Read fresh from localStorage at scan time to avoid stale closure
-    const config = getSelectedConfig();
-    const configId = config?.configurationId || config?.id || null;
-
     log('info', `Barcode captured: "${barcodeValue}"`);
     log('info', `Proxy URL: ${proxyUrl}`);
-    log('info', `Config raw: ${JSON.stringify(config)}`);
-    log('info', `Config keys: ${config ? Object.keys(config).join(', ') : '(null)'}`);
-    log('info', `configurationId resolved: ${configId ?? '(undefined)'}`);
 
     let scanResult = 'error';
     let passData = null;
@@ -78,7 +71,7 @@ export default function Scanner() {
       log('info', `POST ${proxyUrl}/validate  { barcodeValue: "${barcodeValue}" }`);
       const checkData = await checkPassByBarcode(barcodeValue);
       log('ok', `VALIDATE response: ${JSON.stringify(checkData)}`);
-      log('info', `  → identifier: ${checkData.identifier ?? '(missing)'}  voided: ${checkData.voided}  error: "${checkData.error || ''}"`); 
+      log('info', `  → identifier: ${checkData.identifier ?? '(missing)'}  voided: ${checkData.voided}  error: "${checkData.error || ''}"`);
 
       const responseError = checkData.error;
       const isVoided = checkData.voided;
@@ -94,21 +87,19 @@ export default function Scanner() {
         scanResult = 'valid';
         passData = checkData;
         log('ok', `Pass is VALID — identifier: "${checkData.identifier}"`);
-        log('info', `/validate storedValue: ${JSON.stringify(checkData.storedValue)} (may be absent)`);
 
-        // /validate may not return storedValue — fetch full pass details to get it
+        // Fetch full pass details to get storedValue and passTemplateGuid
         log('info', `Fetching full pass details for "${checkData.identifier}"...`);
         try {
           const fullPass = await fetchPassDetails(checkData.identifier);
           log('ok', `Full pass details: ${JSON.stringify(fullPass)}`);
-          log('info', `storedValue from full pass: ${JSON.stringify(fullPass.storedValue)}`);
-          // Merge storedValue into passData
           passData = { ...checkData, ...fullPass };
         } catch (e) {
           log('error', `Failed to fetch full pass details: ${e.message}`);
-          // Continue with what we have from /validate
         }
-        log('info', `Final passData.storedValue: ${JSON.stringify(passData.storedValue)}`);
+
+        log('info', `passData.passTemplateGuid: "${passData.passTemplateGuid}"`);
+        log('info', `passData.storedValue: ${JSON.stringify(passData.storedValue)}`);
       }
     } catch (err) {
       scanResult = 'error';
@@ -124,13 +115,45 @@ export default function Scanner() {
       appScanSubmitted: false,
     });
 
-    // Show confirmation dialog for valid passes
-    if (scanResult === 'valid' && configId) {
-      // Check if this is a points mode pass (stored value present)
+    if (scanResult === 'valid') {
+      // Match config by passTemplateGuid from the validated pass
+      const passTemplateGuid = passData?.passTemplateGuid || passData?.passTemplate?.guid || passData?.passTemplate?.id || null;
+      const allConfigs = getSavedConfigs();
+      log('info', `--- CONFIG MATCHING ---`);
+      log('info', `Pass passTemplateGuid: "${passTemplateGuid}"`);
+      log('info', `Saved configs: ${allConfigs.map(c => `${c.name} → templateId=${c.passTemplateId}`).join(' | ')}`);
+
+      let matchedConfig = null;
+      if (passTemplateGuid) {
+        matchedConfig = allConfigs.find(
+          (c) => c.passTemplateId === passTemplateGuid || c.configurationId === passTemplateGuid
+        ) || null;
+      }
+
+      // Fall back to active/selected config if no template match
+      if (!matchedConfig) {
+        matchedConfig = getSelectedConfig();
+        log('warn', `No template match found — falling back to selected config: "${matchedConfig?.name}"`);
+      } else {
+        log('ok', `Matched config: "${matchedConfig.name}" (passTemplateId=${matchedConfig.passTemplateId})`);
+      }
+
+      const config = matchedConfig;
+      const configId = config?.configurationId || config?.id || null;
+      log('info', `Using configId: "${configId}", configName: "${config?.name}"`);
+
+      if (!configId) {
+        log('error', `No valid config found for this pass. Cannot proceed.`);
+        setProcessing(false);
+        return;
+      }
+
       log('info', `hasStoredValue check: storedValue=${JSON.stringify(passData?.storedValue)} → ${hasStoredValue(passData)}`);
+
       if (hasStoredValue(passData)) {
         const currentPoints = getCurrentStoredValue(passData);
-        const rewardPercent = config?.rewardPercent || 0.10; // default 10%
+        const rewardPercent = config?.rewardPercent || 0.10;
+        log('ok', `Points mode — currentBalance: ${currentPoints}, rewardPercent: ${rewardPercent}`);
         setPointsFlow({
           passData,
           configId,
@@ -139,10 +162,10 @@ export default function Scanner() {
           rewardPercent,
           configName: config?.name || '',
         });
-        log('ok', `Stored value mode detected. Current balance: ${currentPoints}`);
       } else {
         // Stamps mode
-        const scanMode = config?.scanMode ?? 1; // default to attendance mode
+        const scanMode = config?.scanMode ?? 1;
+        log('info', `Stamps mode — scanMode: ${scanMode}`);
         setConfirmPending({
           passData,
           configName: config?.name || '',
