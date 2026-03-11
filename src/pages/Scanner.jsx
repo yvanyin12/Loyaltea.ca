@@ -495,10 +495,21 @@ export default function Scanner() {
         holderPhone: holderInfo.phone,
       });
 
+      // CRITICAL: Fetch updated pass data immediately after successful points scan
+      log('info', `[REFRESH] Fetching updated pass after points scan...`);
+      let finalPassData = passData;
+      try {
+        const updatedPass = await fetchPassDetails(passData?.identifier);
+        log('ok', `[REFRESH] Updated pass data received: storedValue=${updatedPass?.storedValue}`);
+        finalPassData = { ...passData, ...updatedPass };
+      } catch (e) {
+        log('warn', `[REFRESH] Could not fetch updated pass: ${e.message}`);
+      }
+
       setResult({
         status: 'valid',
         barcodeValue,
-        passData,
+        passData: finalPassData,
         error: '',
         appScanSubmitted,
         pointsData: {
@@ -510,12 +521,12 @@ export default function Scanner() {
       });
 
       setPointsFlow(null);
-    } catch (e) {
+      } catch (e) {
       log('error', `Points flow failed: ${e.message}`);
-    }
+      }
 
-    setPointsLoading(false);
-  };
+      setPointsLoading(false);
+      };
 
   const handleAmountSave = async (amount) => {
     if (pendingScanId) {
