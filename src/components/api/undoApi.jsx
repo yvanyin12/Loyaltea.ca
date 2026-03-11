@@ -59,18 +59,53 @@ const finalizeUndo = async (originalScan, reversalFields) => {
 
 /**
  * Undo a STAMPS scan.
- * Calls Passcreator's delete-scan endpoint to remove the stamp,
- * then creates an audit reversal record.
+ * Fetches the current stamp count from Passcreator, decrements by 1,
+ * and writes it back via /update-stored-value — the same mechanism used for points.
+ * Also best-effort deletes the app scan record.
+ * Then creates an audit reversal record.
  */
 export async function undoStampsScan(originalScan) {
+  const proxyUrl = getProxyUrl();
+
+  console.log('[Undo Stamps] ── BEGIN ──────────────────────────');
+  console.log('[Undo Stamps] originalScan:', JSON.stringify(originalScan, null, 2));
+  console.log('[Undo Stamps] loyaltyMode: stamps');
+  console.log('[Undo Stamps] appScanId:', originalScan.appScanId);
+  console.log('[Undo Stamps] passIdentifier:', originalScan.passIdentifier);
+
+  let stampsBefore = null;
+  let stampsAfter = null;
+
+  // 1. Fetch current stamp count and decrement by 1
+  if (originalScan.passIdentifier) {
+    console.log('[Undo Stamps] Fetching current pass details to read stamp count...');
+    const passData = await fetchPassDetails(originalScan.passIdentifier);
+    stampsBefore = parseInt(passData?.storedValue ?? 0, 10);
+    console.log('[Undo Stamps] Current stamp count (storedValue):', stampsBefore);
+
+    stampsAfter = Math.max(0, stampsBefore - 1);
+    console.log('[Undo Stamps] Target stamp count after undo:', stampsAfter);
+    console.log('[Undo Stamps] Sending /update-stored-value:', { passId: originalScan.passIdentifier, newValue: stampsAfter });
+
+    const updateResult = await updateStoredValue(proxyUrl, originalScan.passIdentifier, stampsAfter);
+    console.log('[Undo Stamps] /update-stored-value response:', JSON.stringify(updateResult));
+    console.log('[Undo Stamps] Stamp count after undo:', stampsAfter);
+  } else {
+    console.warn('[Undo Stamps] No passIdentifier on scan — cannot update stamp count in provider!');
+  }
+
+  // 2. Best-effort delete the app scan record
   if (originalScan.appScanId) {
+    console.log('[Undo Stamps] Attempting to delete app scan record:', originalScan.appScanId);
     try {
-      await deleteAppScan(originalScan.appScanId);
+      const deleteResult = await deleteAppScan(originalScan.appScanId);
+      console.log('[Undo Stamps] delete-scan response:', JSON.stringify(deleteResult));
     } catch (e) {
-      // 404 means the scan record no longer exists on the provider side — treat as already removed
-      console.warn('[Undo Stamps] delete-scan failed (ignored):', e.message);
+      console.warn('[Undo Stamps] delete-scan failed (non-fatal):', e.message);
     }
   }
+
+  console.log('[Undo Stamps] ── DONE — stamps:', stampsBefore, '→', stampsAfter, '──────────');
 
   return finalizeUndo(originalScan, {
     loyaltyMode: 'stamps',
