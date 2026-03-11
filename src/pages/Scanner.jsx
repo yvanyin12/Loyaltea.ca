@@ -356,21 +356,7 @@ export default function Scanner() {
       errorMsg = e.message;
     }
 
-    // CRITICAL: Fetch updated pass data immediately after successful stamp scan
-     if (appScanSubmitted && passData?.identifier) {
-       log('info', `[REFRESH] Fetching updated pass after stamp scan...`);
-       try {
-         const updatedPass = await fetchPassDetails(passData.identifier);
-         log('ok', `[REFRESH] Updated pass data received: storedValue=${updatedPass?.storedValue}`);
-         // Update the result to show latest data
-         setResult((prev) => ({
-           ...prev,
-           passData: { ...passData, ...updatedPass },
-         }));
-       } catch (e) {
-         log('warn', `[REFRESH] Could not fetch updated pass: ${e.message}`);
-       }
-     }
+    // Show result immediately (no refetch needed for stamps—stamped/voided status is final)
 
      setConfirmPending(null);
      setConfirmLoading(false);
@@ -476,21 +462,13 @@ export default function Scanner() {
         log('error', `FAILED to update stored value: ${e.message}`);
       }
 
-      // CRITICAL: Fetch updated pass data immediately after successful points scan
-      log('info', `[REFRESH] Fetching updated pass after points scan...`);
-      let finalPassData = passData;
-      try {
-        const updatedPass = await fetchPassDetails(passData?.identifier);
-        log('ok', `[REFRESH] Updated pass data received: storedValue=${updatedPass?.storedValue}`);
-        finalPassData = { ...passData, ...updatedPass };
-      } catch (e) {
-        log('warn', `[REFRESH] Could not fetch updated pass: ${e.message}`);
-      }
+      // Show result immediately with calculated balance (no refetch)
+      log('ok', `[UPDATE] Scan complete, showing result with newBalance=${newBalance}`);
 
       setResult({
         status: 'valid',
         barcodeValue,
-        passData: finalPassData,
+        passData: { ...passData, storedValue: newBalance },
         error: '',
         appScanSubmitted,
         pointsData: {
