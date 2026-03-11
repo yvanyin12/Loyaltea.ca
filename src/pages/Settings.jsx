@@ -46,6 +46,7 @@ function RestaurantSettings() {
 
 export default function Settings() {
   const [isAdmin, setIsAdmin] = useState(null); // null = loading
+  const [previewRestaurant, setPreviewRestaurant] = useState(false);
   const [proxyUrl, setProxyUrlState] = useState(getProxyUrl());
   const [configs, setConfigs] = useState(getSavedConfigs());
   const [proxySaved, setProxySaved] = useState(false);
@@ -53,10 +54,16 @@ export default function Settings() {
   const [editingConfig, setEditingConfig] = useState(null);
 
   useEffect(() => {
+    setPreviewRestaurant(localStorage.getItem('pc_preview_restaurant') === 'true');
     base44.auth.me().then((user) => {
       setIsAdmin(user?.role === 'admin');
     }).catch(() => setIsAdmin(false));
   }, []);
+
+  const handlePreviewRestaurant = () => {
+    localStorage.setItem('pc_preview_restaurant', 'true');
+    window.location.reload();
+  };
 
   const refresh = () => setConfigs(getSavedConfigs());
 
