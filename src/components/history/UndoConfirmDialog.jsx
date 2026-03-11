@@ -98,7 +98,7 @@ export default function UndoConfirmDialog({ scan, onConfirm, onCancel, loading }
           </Button>
           <Button
             className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
-            onClick={onConfirm}
+            onClick={handleConfirmClick}
             disabled={loading}
           >
             {loading ? (
