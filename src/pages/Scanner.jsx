@@ -119,34 +119,88 @@ export default function Scanner() {
       appScanSubmitted: false,
     });
 
-    // Extract holder info from full pass data (Passcreator stores it in personalization fields)
-    // Try multiple locations: top-level, personalization array, holder object
+    // Extract holder info — comprehensive scan of all Passcreator response shapes
     const extractHolderInfo = (p) => {
       if (!p) return { firstName: '', lastName: '', name: '', email: '', phone: '' };
-      // Passcreator personalization: array of { fieldType, value } or named keys
-      const pers = p.personalization || p.personalizations || {};
-      const getField = (...keys) => {
+
+      log('info', `--- HOLDER EXTRACTION ---`);
+      log('info', `Top-level keys: ${Object.keys(p).join(', ')}`);
+
+      // Collect all possible sources
+      const sources = [p, p.holder, p.customer, p.passholder, p.owner].filter(Boolean);
+
+      // Passcreator stores personalization as array of { identifier, fieldType, value, label } 
+      // OR as an object keyed by identifier
+      const persRaw = p.personalization || p.personalizations || p.personalizationFields || p.fields || [];
+      const persArr = Array.isArray(persRaw) ? persRaw : Object.values(persRaw);
+      log('info', `personalization entries (${persArr.length}): ${JSON.stringify(persArr)}`);
+
+      // Build a flat lookup from personalization array using every possible key property
+      const persLookup = {};
+      for (const entry of persArr) {
+        if (!entry || typeof entry !== 'object') continue;
+        const val = entry.value || entry.fieldValue || entry.content || '';
+        const keys = [
+          entry.identifier, entry.fieldType, entry.fieldIdentifier,
+          entry.name, entry.key, entry.label, entry.type,
+        ].filter(Boolean);
         for (const k of keys) {
-          const v = p[k] || p?.holder?.[k] || pers[k] ||
-            (Array.isArray(pers) ? pers.find(f => f.fieldType?.toLowerCase() === k.toLowerCase())?.value : null);
-          if (v) return String(v).trim();
+          persLookup[k.toLowerCase()] = val;
+        }
+      }
+      log('info', `persLookup keys: ${Object.keys(persLookup).join(', ')}`);
+
+      // Generic getter: checks sources + persLookup
+      const get = (...keys) => {
+        for (const k of keys) {
+          const kl = k.toLowerCase();
+          // Check each source object
+          for (const src of sources) {
+            const v = src[k] || src[kl];
+            if (v && typeof v === 'string' && v.trim()) return v.trim();
+          }
+          // Check persLookup
+          const pv = persLookup[kl];
+          if (pv && typeof pv === 'string' && pv.trim()) return pv.trim();
         }
         return '';
       };
-      const firstName = getField('firstName', 'first_name', 'forename', 'givenName');
-      const lastName = getField('lastName', 'last_name', 'surname', 'familyName');
+
+      const firstName = get(
+        'firstName', 'first_name', 'firstname', 'forename', 'givenName', 'given_name',
+        'prenom', 'vorname', 'fname', 'first'
+      );
+      const lastName = get(
+        'lastName', 'last_name', 'lastname', 'surname', 'familyName', 'family_name',
+        'nom', 'nachname', 'lname', 'last'
+      );
       const name = firstName || lastName
         ? [firstName, lastName].filter(Boolean).join(' ')
-        : getField('name', 'holderName', 'fullName', 'owner');
-      const email = getField('email', 'holderEmail', 'emailAddress', 'mail');
-      const phone = getField('phone', 'phoneNumber', 'mobile', 'holderPhone', 'telephone', 'cell');
+        : get('name', 'fullName', 'full_name', 'holderName', 'displayName', 'owner', 'title', 'passholderName');
+      const email = get(
+        'email', 'emailAddress', 'email_address', 'holderEmail', 'mail',
+        'courriel', 'e-mail', 'userEmail'
+      );
+      const phone = get(
+        'phone', 'phoneNumber', 'phone_number', 'mobile', 'mobileNumber', 'mobile_number',
+        'holderPhone', 'telephone', 'cell', 'cellPhone', 'tel', 'handy', 'portable'
+      );
+
+      log('info', `Extracted → firstName: "${firstName}" | lastName: "${lastName}" | name: "${name}" | email: "${email}" | phone: "${phone}"`);
       return { firstName, lastName, name, email, phone };
     };
 
     const extracted = extractHolderInfo(passData);
     setHolderInfo(extracted);
-    log('info', `Holder info — name: "${extracted.name}" email: "${extracted.email}" phone: "${extracted.phone}"`);
-    log('info', `Full passData keys: ${Object.keys(passData || {}).join(', ')}`);
+
+    const scanLogPayloadPreview = {
+      holderFirstName: extracted.firstName,
+      holderLastName: extracted.lastName,
+      holderName: extracted.name,
+      holderEmail: extracted.email,
+      holderPhone: extracted.phone,
+    };
+    log('info', `ScanLog holder payload preview: ${JSON.stringify(scanLogPayloadPreview)}`);
 
     if (scanResult === 'valid') {
       const passTemplateGuid = passData?.passTemplateGuid || passData?.passTemplate?.guid || passData?.passTemplate?.id || null;
