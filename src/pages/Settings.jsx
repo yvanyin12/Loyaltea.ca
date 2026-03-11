@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CheckCircle2, Plus } from 'lucide-react';
+import { CheckCircle2, Plus, Eye } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import {
   getProxyUrl,
