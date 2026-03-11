@@ -24,6 +24,7 @@ import {
   hasStoredValue,
   calculatePoints,
   updateStoredValue,
+  triggerPassPush,
 } from '../components/api/pointsApi';
 import PointsConfirmation from '../components/scanner/PointsConfirmation';
 
@@ -478,16 +479,8 @@ export default function Scanner() {
          // CRITICAL: Trigger wallet push after stored value update
          log('info', `[WALLET] Triggering pass push/update notification...`);
          try {
-           const pushResponse = await fetch(`${proxyUrl}/push-pass-update`, {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ passId: passData?.identifier }),
-           });
-           if (pushResponse.ok) {
-             log('ok', `[WALLET] Pass push triggered successfully ✓`);
-           } else {
-             log('warn', `[WALLET] Pass push returned ${pushResponse.status} (may still work)`);
-           }
+           const pushResult = await triggerPassPush(proxyUrl, passData?.identifier);
+           log('ok', `[WALLET] Pass push triggered: ${JSON.stringify(pushResult)}`);
          } catch (e) {
            log('warn', `[WALLET] Could not trigger push (non-critical): ${e.message}`);
          }
