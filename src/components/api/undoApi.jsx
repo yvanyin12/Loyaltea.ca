@@ -10,7 +10,7 @@
  *  - A new reversal ScanLog is created (isReversal = true, reversedScanId = original.id)
  */
 
-import { deleteAppScan, getProxyUrl } from './passcreatorApi';
+import { deleteAppScan, fetchPassDetails, getProxyUrl } from './passcreatorApi';
 import { updateStoredValue } from './pointsApi';
 import { base44 } from '@/api/base44Client';
 
