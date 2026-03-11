@@ -5,15 +5,11 @@ import { Button } from '@/components/ui/button';
 import moment from 'moment-timezone';
 import RevenueStats from '../components/history/RevenueStats';
 import ScanCard from '../components/history/ScanCard';
-import UndoConfirmDialog from '../components/history/UndoConfirmDialog';
-import { undoScan } from '../components/api/undoApi';
 import { getSelectedConfig } from '../components/api/passcreatorApi';
 
 export default function ScanHistory() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [undoTarget, setUndoTarget] = useState(null); // scan pending undo confirmation
-  const [undoLoading, setUndoLoading] = useState(false);
   const activeConfig = getSelectedConfig();
   const activeConfigId = activeConfig?.configurationId || activeConfig?.id || null;
   const activeConfigName = activeConfig?.name || null;
@@ -30,15 +26,6 @@ export default function ScanHistory() {
   };
 
   useEffect(() => { loadScans(); }, [activeConfigId]);
-
-  const handleUndoConfirm = async () => {
-    if (!undoTarget) return;
-    setUndoLoading(true);
-    await undoScan(undoTarget);
-    setUndoTarget(null);
-    setUndoLoading(false);
-    await loadScans();
-  };
 
   const handleClear = async () => {
     const label = activeConfigName ? `"${activeConfigName}"` : 'selected configuration';
@@ -99,12 +86,6 @@ export default function ScanHistory() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <UndoConfirmDialog
-        scan={undoTarget}
-        onConfirm={handleUndoConfirm}
-        onCancel={() => setUndoTarget(null)}
-        loading={undoLoading}
-      />
       <div className="max-w-lg mx-auto px-5 py-8">
 
         {/* Header */}
@@ -148,12 +129,12 @@ export default function ScanHistory() {
             <p className="text-slate-600 text-sm mt-1">Start scanning passes on the Scanner tab.</p>
           </div>
         ) : (
-          <div className="space-y-2 mt-5">
-            {scans.map((scan) => (
-              <ScanCard key={scan.id} scan={scan} onUndo={setUndoTarget} />
-            ))}
-          </div>
-        )}
+           <div className="space-y-2 mt-5">
+             {scans.map((scan) => (
+               <ScanCard key={scan.id} scan={scan} />
+             ))}
+           </div>
+         )}
       </div>
     </div>
   );
