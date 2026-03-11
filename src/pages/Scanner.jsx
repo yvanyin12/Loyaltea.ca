@@ -56,6 +56,21 @@ export default function Scanner() {
     setDebugLogs((prev) => [...prev, { level, message }]);
   };
 
+  // Monitor what value is being displayed to the user
+  useEffect(() => {
+    if (result && result.status === 'valid' && result.pointsData) {
+      const displayTime = performance.now();
+      log('info', `\n[DISPLAY] ═══════════════════════════════════════════════════════════`);
+      log('info', `[DISPLAY] ScanResult component is rendering at ${displayTime.toFixed(0)}ms`);
+      log('info', `[DISPLAY] User is LOOKING AT these values:`);
+      log('info', `[DISPLAY]   Previous Balance: ${result.pointsData.previousBalance}`);
+      log('info', `[DISPLAY]   Points Earned: ${result.pointsData.pointsEarned}`);
+      log('info', `[DISPLAY]   NEW Balance (displayed): ${result.pointsData.newBalance}`);
+      log('info', `[DISPLAY] Source: React state (Scanner page scans cache)`);
+      log('info', `[DISPLAY] ═══════════════════════════════════════════════════════════\n`);
+    }
+  }, [result]);
+
 
 
   const handleScan = async (barcodeValue) => {
