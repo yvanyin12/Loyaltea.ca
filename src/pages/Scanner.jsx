@@ -148,12 +148,24 @@ export default function Scanner() {
         return;
       }
 
-      log('info', `hasStoredValue check: storedValue=${JSON.stringify(passData?.storedValue)} → ${hasStoredValue(passData)}`);
+      // ── Config debug summary ──────────────────────────────────────
+      log('info', `--- CONFIG SUMMARY ---`);
+      log('info', `config name: "${config?.name}"`);
+      log('info', `config id: "${configId}"`);
+      log('info', `config rewardPercent (raw from storage): ${JSON.stringify(config?.rewardPercent)}`);
+      log('info', `config loyaltyType: "${config?.loyaltyType ?? 'not set'}"`);
+      log('info', `passData.storedValue: ${JSON.stringify(passData?.storedValue)}`);
+      log('info', `hasStoredValue: ${hasStoredValue(passData)}`);
 
       if (hasStoredValue(passData)) {
         const currentPoints = getCurrentStoredValue(passData);
-        const rewardPercent = config?.rewardPercent || 0.10;
-        log('ok', `Points mode — currentBalance: ${currentPoints}, rewardPercent: ${rewardPercent}`);
+        // Use saved rewardPercent — use typeof check so 0 is valid (not treated as falsy)
+        const rewardPercent = (typeof config?.rewardPercent === 'number' && !isNaN(config.rewardPercent))
+          ? config.rewardPercent
+          : 0.10;
+        log('ok', `Points mode ✓`);
+        log('info', `currentBalance: ${currentPoints}`);
+        log('info', `rewardPercent used in calculation: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
         setPointsFlow({
           passData,
           configId,
@@ -166,6 +178,7 @@ export default function Scanner() {
         // Stamps mode
         const scanMode = config?.scanMode ?? 1;
         log('info', `Stamps mode — scanMode: ${scanMode}`);
+        log('info', `(No storedValue on this pass — percentage-based points logic does NOT apply)`);
         setConfirmPending({
           passData,
           configName: config?.name || '',
