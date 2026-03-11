@@ -148,37 +148,23 @@ export default function Scanner() {
         return;
       }
 
-      // ── Config debug summary ──────────────────────────────────────
-      log('info', `--- CONFIG SUMMARY ---`);
-      log('info', `config name: "${config?.name}"`);
-      log('info', `config id: "${configId}"`);
-      log('info', `config rewardPercent (raw from storage): ${JSON.stringify(config?.rewardPercent)}`);
-      log('info', `config loyaltyType: "${config?.loyaltyType ?? 'not set'}"`);
+      // ── Config & loyalty type debug summary ──────────────────────
+      const detectedLoyaltyType = (config?.loyaltyType ?? 'points').toLowerCase(); // 'points' or 'stamps'
+      log('info', `--- CONFIG & LOYALTY TYPE SUMMARY ---`);
+      log('info', `pass passTemplateGuid: "${passTemplateGuid}"`);
+      log('info', `matched config name: "${config?.name}"`);
+      log('info', `matched config id: "${configId}"`);
+      log('info', `matched config passTemplateId: "${config?.passTemplateId ?? 'not set'}"`);
+      log('info', `matched config loyaltyType (saved): "${config?.loyaltyType ?? 'not set (defaulting to points)'}"`);
+      log('info', `detected loyalty type: ${detectedLoyaltyType.toUpperCase()}`);
       log('info', `passData.storedValue: ${JSON.stringify(passData?.storedValue)}`);
-      log('info', `hasStoredValue: ${hasStoredValue(passData)}`);
 
-      if (hasStoredValue(passData)) {
-        const currentPoints = getCurrentStoredValue(passData);
-        // Use saved rewardPercent — use typeof check so 0 is valid (not treated as falsy)
-        const rewardPercent = (typeof config?.rewardPercent === 'number' && !isNaN(config.rewardPercent))
-          ? config.rewardPercent
-          : 0.10;
-        log('ok', `Points mode ✓`);
-        log('info', `currentBalance: ${currentPoints}`);
-        log('info', `rewardPercent used in calculation: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
-        setPointsFlow({
-          passData,
-          configId,
-          barcodeValue,
-          currentPoints,
-          rewardPercent,
-          configName: config?.name || '',
-        });
-      } else {
-        // Stamps mode
+      if (detectedLoyaltyType === 'stamps') {
+        // Stamps template → reject points flow immediately
+        log('warn', `STAMPS template detected — points flow is INVALID for this pass`);
+        log('warn', `Reason: config.loyaltyType = "stamps" → percentage-based points logic does NOT apply`);
+        log('warn', `→ Proceeding with stamps attendance flow instead`);
         const scanMode = config?.scanMode ?? 1;
-        log('info', `Stamps mode — scanMode: ${scanMode}`);
-        log('info', `(No storedValue on this pass — percentage-based points logic does NOT apply)`);
         setConfirmPending({
           passData,
           configName: config?.name || '',
@@ -187,6 +173,38 @@ export default function Scanner() {
           configId,
           scanResult,
         });
+      } else {
+        // Points template
+        if (!hasStoredValue(passData)) {
+          log('warn', `Points template but no storedValue on pass — proceeding with attendance flow`);
+          log('warn', `Reason: passData.storedValue is null/undefined`);
+          const scanMode = config?.scanMode ?? 1;
+          setConfirmPending({
+            passData,
+            configName: config?.name || '',
+            scanMode,
+            barcodeValue,
+            configId,
+            scanResult,
+          });
+        } else {
+          const currentPoints = getCurrentStoredValue(passData);
+          const rewardPercent = (typeof config?.rewardPercent === 'number' && !isNaN(config.rewardPercent))
+            ? config.rewardPercent
+            : 0.10;
+          log('ok', `POINTS template detected — points flow is VALID ✓`);
+          log('ok', `Reason: config.loyaltyType = "points" and storedValue is present`);
+          log('info', `currentBalance: ${currentPoints}`);
+          log('info', `rewardPercent from config: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
+          setPointsFlow({
+            passData,
+            configId,
+            barcodeValue,
+            currentPoints,
+            rewardPercent,
+            configName: config?.name || '',
+          });
+        }
       }
     }
 
