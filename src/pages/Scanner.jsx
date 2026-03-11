@@ -279,9 +279,11 @@ export default function Scanner() {
         appScanId: appScanId || '',
         errorMessage: errorMsg,
         isUndone: false,
-        holderName: holderName || '',
-        holderEmail: holderEmail || '',
-        holderPhone: holderPhone || '',
+        holderFirstName: holderInfo.firstName,
+        holderLastName: holderInfo.lastName,
+        holderName: holderInfo.name,
+        holderEmail: holderInfo.email,
+        holderPhone: holderInfo.phone,
       });
       if (created?.id) {
         setPendingScanId(created.id);
