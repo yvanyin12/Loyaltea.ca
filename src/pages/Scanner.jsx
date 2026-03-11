@@ -411,83 +411,52 @@ export default function Scanner() {
     const { passData, configId, barcodeValue, currentPoints, rewardPercent, configName } = pointsFlow;
     const config = getSelectedConfig();
 
-    try {
-      // Calculate points earned
-      const pointsEarned = calculatePoints(amountSpent, rewardPercent);
-      const newBalance = currentPoints + pointsEarned;
+    // Calculate points earned
+    const pointsEarned = calculatePoints(amountSpent, rewardPercent);
+    const newBalance = currentPoints + pointsEarned;
 
-      log('info', `═══ POINTS TRANSACTION START ═══`);
-      log('info', `--- POINTS CALCULATION ---`);
-      log('info', `config name: "${configName}"`);
-      log('info', `config id: "${configId}"`);
-      log('info', `rewardPercent from saved config: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
-      log('info', `passId (identifier): "${passData?.identifier}"`);
-      log('info', `previousStoredValue: ${currentPoints}`);
-      log('info', `amountSpent: $${amountSpent}`);
-      log('info', `rewardPercent used: ${rewardPercent}`);
-      log('info', `formula: round(${amountSpent} × ${rewardPercent} × 1000) = ${pointsEarned}`);
-      log('info', `newStoredValue: ${currentPoints} + ${pointsEarned} = ${newBalance}`);
+    log('info', `═══ POINTS TRANSACTION START ═══`);
+    log('info', `--- POINTS CALCULATION ---`);
+    log('info', `config name: "${configName}"`);
+    log('info', `config id: "${configId}"`);
+    log('info', `rewardPercent from saved config: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
+    log('info', `passId (identifier): "${passData?.identifier}"`);
+    log('info', `previousStoredValue: ${currentPoints}`);
+    log('info', `amountSpent: $${amountSpent}`);
+    log('info', `rewardPercent used: ${rewardPercent}`);
+    log('info', `formula: round(${amountSpent} × ${rewardPercent} × 1000) = ${pointsEarned}`);
+    log('info', `newStoredValue: ${currentPoints} + ${pointsEarned} = ${newBalance}`);
 
-      // Submit the app scan (attendance tracking)
-      const resolvedScanStatus = 2; // attendance
-      const trackPayload = {
-        appConfigurationId: configId,
-        passId: passData?.identifier || '',
-        scanStatus: resolvedScanStatus,
-        createdOn: new Date().toISOString(),
-        scannedBarcodeValue: barcodeValue,
-        deviceName: 'Base44 Scanner',
-      };
+    // Fire off background operations (non-blocking to UI)
+    const trackPayload = {
+      appConfigurationId: configId,
+      passId: passData?.identifier || '',
+      scanStatus: 2, // attendance
+      createdOn: new Date().toISOString(),
+      scannedBarcodeValue: barcodeValue,
+      deviceName: 'Base44 Scanner',
+    };
 
-      log('info', `Submitting app scan...`);
-      let appScanId = null;
-      let appScanSubmitted = false;
+    log('info', `Submitting app scan and stored value update in background...`);
+    let appScanId = null;
 
-      try {
-        const trackResponse = await createAppScan(trackPayload);
-        appScanSubmitted = true;
-        appScanId = trackResponse?.appScanId || trackResponse?.identifier || null;
-        log('ok', `App scan tracked: ${appScanId}`);
-      } catch (e) {
-        log('error', `App scan failed: ${e.message}`);
-      }
+    // Fire both requests in parallel, don't wait for either
+    Promise.all([
+      createAppScan(trackPayload)
+        .then((trackResponse) => {
+          appScanId = trackResponse?.appScanId || trackResponse?.identifier || null;
+          log('ok', `App scan tracked: ${appScanId}`);
+        })
+        .catch((e) => log('error', `App scan failed: ${e.message}`)),
 
-      // Update stored value (loyalty balance) in Passcreator
-      const svPayload = { passId: passData?.identifier || '', newValue: newBalance };
-      log('info', `--- STORED VALUE UPDATE ---`);
-      log('info', `POST ${proxyUrl}/update-stored-value`);
-      log('info', `Payload: ${JSON.stringify(svPayload)}`);
-      try {
-        log('info', `[TIMING] Stored value update request SENDING...`);
-        const svResponse = await updateStoredValue(proxyUrl, passData?.identifier, newBalance);
-        log('ok', `[TIMING] Stored value update response RECEIVED`);
-        log('ok', `Response: ${JSON.stringify(svResponse)}`);
-        log('ok', `Stored value updated to ${newBalance} ✓`);
-        // NOTE: Wallet delay after this point is Passcreator push propagation + Apple/Google Wallet delivery
-      } catch (e) {
-        log('error', `FAILED to update stored value: ${e.message}`);
-      }
-
-      // Show result immediately with calculated balance (no refetch)
-      log('ok', `[UPDATE] Scan complete, showing result with newBalance=${newBalance}`);
-
-      setResult({
-        status: 'valid',
-        barcodeValue,
-        passData: { ...passData, storedValue: newBalance },
-        error: '',
-        appScanSubmitted,
-        pointsData: {
-          amountSpent,
-          pointsEarned,
-          previousBalance: currentPoints,
-          newBalance,
-        },
-      });
-
-      setPointsFlow(null);
-
-      // Save to database in background (non-blocking)
+      updateStoredValue(proxyUrl, passData?.identifier, newBalance)
+        .then((svResponse) => {
+          log('ok', `Stored value updated to ${newBalance} ✓`);
+        })
+        .catch((e) => log('error', `FAILED to update stored value: ${e.message}`)),
+    ])
+    .then(() => {
+      // After both complete, save to database
       log('info', `[POINTS] Saving ScanLog to database...`);
       base44.entities.ScanLog.create({
         barcodeValue,
@@ -496,7 +465,7 @@ export default function Scanner() {
         appConfigurationName: configName,
         scanResult: 'valid',
         isVoided: false,
-        appScanSubmitted,
+        appScanSubmitted: true,
         appScanId: appScanId || '',
         loyaltyMode: 'points',
         amountSpent,
@@ -509,12 +478,28 @@ export default function Scanner() {
         holderEmail: holderInfo.email,
         holderPhone: holderInfo.phone,
       }).catch((e) => log('warn', `ScanLog save failed: ${e.message}`));
-      } catch (e) {
-      log('error', `Points flow failed: ${e.message}`);
-      }
+    });
 
-      setPointsLoading(false);
-      };
+    // Show result IMMEDIATELY with calculated balance (like Passcreator does)
+    log('ok', `[UPDATE] Showing result immediately with newBalance=${newBalance}`);
+
+    setResult({
+      status: 'valid',
+      barcodeValue,
+      passData: { ...passData, storedValue: newBalance },
+      error: '',
+      appScanSubmitted: true,
+      pointsData: {
+        amountSpent,
+        pointsEarned,
+        previousBalance: currentPoints,
+        newBalance,
+      },
+    });
+
+    setPointsFlow(null);
+    setPointsLoading(false);
+    };
 
   const handleAmountSave = async (amount) => {
     if (pendingScanId) {
