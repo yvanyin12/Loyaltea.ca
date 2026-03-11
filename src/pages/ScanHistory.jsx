@@ -33,14 +33,31 @@ export default function ScanHistory() {
 
   const handleUndoConfirm = async () => {
     if (!undoTarget) return;
+    const undoStartTime = performance.now();
+    console.log(`[Client Undo] ── DEVICE SIDE undo started at ${undoStartTime.toFixed(0)}ms`);
     setUndoLoading(true);
     try {
+      const undoCompleteTime = performance.now();
+      console.log(`[Client Undo] Calling undoScan() at ${undoCompleteTime.toFixed(0)}ms...`);
       await undoScan(undoTarget);
-      // Immediately refetch scans to show fresh data
+      
+      const postUndoTime = performance.now();
+      console.log(`[Client Undo] undoScan() returned at ${postUndoTime.toFixed(0)}ms (${(postUndoTime - undoStartTime).toFixed(0)}ms elapsed)`);
+      console.log(`[Client Undo] Now refetching scans from device at ${postUndoTime.toFixed(0)}ms...`);
+      
+      const refetchStartTime = performance.now();
       await loadScans();
+      
+      const refetchEndTime = performance.now();
+      console.log(`[Client Undo] Scans refetched at ${refetchEndTime.toFixed(0)}ms (${(refetchEndTime - refetchStartTime).toFixed(0)}ms fetch time)`);
+      console.log(`[Client Undo] ── TOTAL DEVICE TIME: ${(refetchEndTime - undoStartTime).toFixed(0)}ms`);
+      console.log(`[Client Undo] State updated, component will re-render now`);
     } finally {
+      const finalTime = performance.now();
+      console.log(`[Client Undo] Finally block at ${finalTime.toFixed(0)}ms`);
       setUndoTarget(null);
       setUndoLoading(false);
+      console.log(`[Client Undo] ── RENDER PHASE: Dialog closed, UI should update now`);
     }
   };
 
