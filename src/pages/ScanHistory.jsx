@@ -101,7 +101,10 @@ export default function ScanHistory() {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h1 className="text-2xl font-bold">Scan History</h1>
-            <p className="text-slate-400 text-sm mt-1">{scans.length} scan{scans.length !== 1 ? 's' : ''} recorded</p>
+            {activeConfigName && (
+              <p className="text-blue-400 text-xs mt-0.5">{activeConfigName}</p>
+            )}
+            <p className="text-slate-400 text-sm mt-0.5">{scans.length} scan{scans.length !== 1 ? 's' : ''} recorded</p>
           </div>
           <div className="flex gap-2">
             {scans.length > 0 && (
