@@ -61,12 +61,20 @@ export default function Scanner() {
     if (result && result.status === 'valid' && result.pointsData) {
       const displayTime = performance.now();
       log('info', `\n[DISPLAY] ═══════════════════════════════════════════════════════════`);
-      log('info', `[DISPLAY] ScanResult component is rendering at ${displayTime.toFixed(0)}ms`);
+      log('info', `[DISPLAY] ScanResult component RENDERED at ${displayTime.toFixed(0)}ms`);
       log('info', `[DISPLAY] User is LOOKING AT these values:`);
       log('info', `[DISPLAY]   Previous Balance: ${result.pointsData.previousBalance}`);
       log('info', `[DISPLAY]   Points Earned: ${result.pointsData.pointsEarned}`);
       log('info', `[DISPLAY]   NEW Balance (displayed): ${result.pointsData.newBalance}`);
-      log('info', `[DISPLAY] Source: React state (Scanner page scans cache)`);
+      log('info', `[DISPLAY] This balance came from Passcreator response`);
+      log('info', `[DISPLAY] ═══════════════════════════════════════════════════════════\n`);
+    } else if (result && result.status === 'valid' && result.passData) {
+      const displayTime = performance.now();
+      const storedVal = result.passData?.storedValue;
+      log('info', `\n[DISPLAY] ═══════════════════════════════════════════════════════════`);
+      log('info', `[DISPLAY] ScanResult component RENDERED at ${displayTime.toFixed(0)}ms`);
+      log('info', `[DISPLAY] (STAMPS mode) Displayed storedValue: ${storedVal}`);
+      log('info', `[DISPLAY] This value came from Passcreator response`);
       log('info', `[DISPLAY] ═══════════════════════════════════════════════════════════\n`);
     }
   }, [result]);
