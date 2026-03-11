@@ -148,40 +148,56 @@ export default function Scanner() {
       const config = matchedConfig;
       const configId = config?.configurationId || config?.id || null;
 
-      // If loyaltyType is explicitly saved, use it.
-      // If not set, infer from storedValue: present → POINTS, absent → STAMPS.
+      // Determine loyalty type with priority:
+      // 1. Explicit config.loyaltyType (set via ConfigEditor)
+      // 2. Pass template name contains "stamp" → STAMPS
+      // 3. Pass template name contains "point" → POINTS
+      // 4. Final fallback: storedValue present + > 0 → POINTS, else STAMPS
       const savedLoyaltyType = config?.loyaltyType ? config.loyaltyType.toLowerCase() : null;
-      const inferredFromPass = hasStoredValue(passData) ? 'points' : 'stamps';
-      const detectedLoyaltyType = savedLoyaltyType ?? inferredFromPass;
+      const templateName = (passData?.passTemplateName || passData?.passTemplate?.name || '').toLowerCase();
+      const nameHasStamps = templateName.includes('stamp');
+      const nameHasPoints = templateName.includes('point');
+      let inferredLoyaltyType;
+      let inferReason;
+      if (savedLoyaltyType) {
+        inferredLoyaltyType = savedLoyaltyType;
+        inferReason = `explicitly saved in config (loyaltyType = "${config.loyaltyType}")`;
+      } else if (nameHasStamps) {
+        inferredLoyaltyType = 'stamps';
+        inferReason = `passTemplateName "${passData?.passTemplateName}" contains "stamp"`;
+      } else if (nameHasPoints) {
+        inferredLoyaltyType = 'points';
+        inferReason = `passTemplateName "${passData?.passTemplateName}" contains "point"`;
+      } else {
+        const sv = getCurrentStoredValue(passData);
+        inferredLoyaltyType = (sv > 0) ? 'points' : 'stamps';
+        inferReason = `passTemplateName has no keyword — storedValue = ${sv} → ${inferredLoyaltyType.toUpperCase()}`;
+      }
+      const detectedLoyaltyType = inferredLoyaltyType;
 
       log('info', `--- LOYALTY TYPE DETERMINATION ---`);
+      log('info', `scanned passTemplateGuid: "${passTemplateGuid}"`);
       log('info', `matched config name: "${config?.name}"`);
-      log('info', `matched config id: "${configId}"`);
       log('info', `matched config passTemplateId: "${config?.passTemplateId}"`);
       log('info', `raw saved config.loyaltyType: "${config?.loyaltyType ?? 'not set'}"`);
+      log('info', `passTemplateName: "${passData?.passTemplateName ?? 'not set'}"`);
       log('info', `passData.storedValue: ${JSON.stringify(passData?.storedValue)}`);
-      if (savedLoyaltyType) {
-        log('info', `inferred loyalty type: ${detectedLoyaltyType.toUpperCase()} (reason: explicitly saved in config)`);
-      } else {
-        log('info', `inferred loyalty type: ${detectedLoyaltyType.toUpperCase()} (reason: config.loyaltyType not set — inferred from storedValue ${hasStoredValue(passData) ? `= ${getCurrentStoredValue(passData)} → POINTS` : '= absent → STAMPS'})`);
-      }
+      log('info', `inferred loyalty type: ${detectedLoyaltyType.toUpperCase()}`);
+      log('info', `reason: ${inferReason}`);
 
       if (detectedLoyaltyType === 'stamps') {
-        log('warn', `STAMPS template — points flow REJECTED`);
-        log('warn', `Reason: config.loyaltyType = "${config?.loyaltyType ?? 'not set'}" → percentage-based points logic does NOT apply`);
-        log('warn', `→ Proceeding with stamps attendance flow`);
+        log('info', `branch taken: STAMPS_FLOW`);
+        log('info', `→ adding 1 stamp via attendance scan`);
         const scanMode = config?.scanMode ?? 1;
         setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult });
       } else {
-        // Points template
+        log('info', `branch taken: POINTS_FLOW`);
         const currentPoints = getCurrentStoredValue(passData);
         const rewardPercent = (typeof config?.rewardPercent === 'number' && !isNaN(config.rewardPercent))
           ? config.rewardPercent
           : 0.10;
-        log('ok', `POINTS template — points flow VALID ✓`);
-        log('ok', `Reason: config.loyaltyType = "points" and exact template match confirmed`);
-        log('info', `currentBalance: ${currentPoints}`);
-        log('info', `rewardPercent from config: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
+        log('ok', `→ opening Points Loyalty screen`);
+        log('info', `currentBalance: ${currentPoints}, rewardPercent: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
         setPointsFlow({ passData, configId, barcodeValue, currentPoints, rewardPercent, configName: config?.name || '' });
       }
     }
