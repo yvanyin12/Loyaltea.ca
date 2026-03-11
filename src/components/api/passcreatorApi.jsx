@@ -3,10 +3,12 @@
  *
  * PROXY CONTRACT
  * ─────────────────────────────────────────
- * POST /configs   body: {}                              → Array of App Configuration objects
- * POST /validate  body: { barcodeValue }                → { voided, identifier, error, ... }
- * POST /track     body: { appConfigurationId, passId, scanStatus, createdOn, scannedBarcodeValue, deviceName }
+ * POST /configs      body: {}                              → Array of App Configuration objects
+ * POST /validate     body: { barcodeValue }               → { voided, identifier, error, ... }
+ * POST /pass-details body: { passId }                     → Full pass object incl. storedValue
+ * POST /track        body: { appConfigurationId, passId, scanStatus, createdOn, scannedBarcodeValue, deviceName }
  * POST /delete-scan  body: { identifier }  → DELETE https://app.passcreator.com/api/appscan/{identifier}
+ * POST /update-stored-value body: { passId, newValue }   → PUT https://app.passcreator.com/api/pass/{passId}/storedvalue
  */
 
 const DEFAULT_PROXY_URL = 'https://square-bush-df0f.yvanyin123.workers.dev';
@@ -120,4 +122,10 @@ export async function createAppScan(payload) {
 // Proxy must handle: POST /delete-scan { identifier } → DELETE https://app.passcreator.com/api/appscan/{identifier}
 export async function deleteAppScan(appScanIdentifier) {
   return proxyPost('/delete-scan', { identifier: appScanIdentifier });
+}
+
+// Fetches full pass details by passId (UUID).
+// Proxy must handle: POST /pass-details { passId } → GET https://app.passcreator.com/api/pass/{passId}
+export async function fetchPassDetails(passId) {
+  return proxyPost('/pass-details', { passId });
 }
