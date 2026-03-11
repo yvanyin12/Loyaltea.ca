@@ -7,6 +7,22 @@ export default function UndoConfirmDialog({ scan, onConfirm, onCancel, loading }
   const mode = scan.loyaltyMode || (scan.pointsEarned != null ? 'points' : 'stamps');
   const isPoints = mode === 'points';
 
+  const handleConfirmClick = () => {
+    const tapTime = performance.now();
+    console.log(`\n========== UNDO DEBUG LOG START ==========`);
+    console.log(`[Phone] TAP: Confirm Undo button tapped at ${tapTime.toFixed(0)}ms`);
+    console.log(`[Phone] TAP: Scan ID: ${scan.id.substring(0, 8)}...`);
+    console.log(`[Phone] TAP: Pass ID: ${scan.passIdentifier}`);
+    console.log(`[Phone] TAP: Loyalty mode: ${mode}`);
+    if (isPoints) {
+      console.log(`[Phone] TAP: Current points before undo: ${scan.newPointsBalance}`);
+      console.log(`[Phone] TAP: Will revert to: ${scan.previousPointsBalance}`);
+    } else {
+      console.log(`[Phone] TAP: Current stamps before undo: (will fetch)`);
+    }
+    onConfirm();
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-5 space-y-4">
