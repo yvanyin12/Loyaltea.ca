@@ -309,9 +309,10 @@ export default function Scanner() {
            log('info', `currentBalance: ${currentPoints}, rewardPercent: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
            setPointsFlow({ passData, configId, barcodeValue, currentPoints, rewardPercent, configName: config?.name || '' });
          }
+         }
 
-    setProcessing(false);
-  };
+         setProcessing(false);
+         };
 
   const handleConfirmScan = async () => {
     if (!confirmPending) return;
