@@ -129,57 +129,57 @@ export default function ScanHistory() {
   const handleUndoConfirm = async () => {
     if (!undoTarget) return;
     const uiStartTime = performance.now();
-    console.log(`\n\n`);
-    console.log(`╔════════════════════════════════════════════════════════════════╗`);
-    console.log(`║ FULL UNDO FLOW TRACE (Device-side)                             ║`);
-    console.log(`╚════════════════════════════════════════════════════════════════╝`);
-    console.log(`[UNDO] [T=0ms] User tapped Confirm Undo button at ${uiStartTime.toFixed(0)}ms`);
-    console.log(`[UNDO] [TARGET] Scan ID: ${undoTarget.id.substring(0, 8)}`);
-    console.log(`[UNDO] [TARGET] Pass ID: ${undoTarget.passIdentifier}`);
-    console.log(`[UNDO] [TARGET] Current balance: ${undoTarget.newPointsBalance || '(stamps mode)'}`);
+    
+    // Clear previous logs and start fresh
+    setDebugLogs([]);
+    
+    addLog(`╔════════════════════════════════════════════════════════════════╗`);
+    addLog(`║ UNDO FLOW TRACE - DEVICE SIDE                                 ║`);
+    addLog(`╚════════════════════════════════════════════════════════════════╝`);
+    addLog(`[UNDO] [T=0ms] Confirm Undo tapped at ${uiStartTime.toFixed(0)}ms`);
+    addLog(`[UNDO] [BEFORE] Scan ID: ${undoTarget.id.substring(0, 8)}`);
+    addLog(`[UNDO] [BEFORE] Pass ID: ${undoTarget.passIdentifier}`);
+    addLog(`[UNDO] [BEFORE] Balance: ${undoTarget.newPointsBalance || '(stamps mode)'}`);
+    addLog(`[UNDO] [BEFORE] Points earned: ${undoTarget.pointsEarned || 'N/A'}`);
     
     setUndoLoading(true);
     const stateSetTime = performance.now();
-    console.log(`[UNDO] [T=${(stateSetTime - uiStartTime).toFixed(0)}ms] setUndoLoading(true) executed`);
+    addLog(`[UNDO] [T=${(stateSetTime - uiStartTime).toFixed(0)}ms] setUndoLoading(true)`);
     
     try {
       const apiCallTime = performance.now();
-      console.log(`\n[UNDO] [T=${(apiCallTime - uiStartTime).toFixed(0)}ms] ► Calling undoScan() API...`);
+      addLog(`[UNDO] [T=${(apiCallTime - uiStartTime).toFixed(0)}ms] ► Calling undoScan()...`);
       await undoScan(undoTarget);
       
       const apiReturnTime = performance.now();
-      console.log(`[UNDO] [T=${(apiReturnTime - uiStartTime).toFixed(0)}ms] ◄ undoScan() completed (${(apiReturnTime - apiCallTime).toFixed(0)}ms API time)`);
-      console.log(`[UNDO] [API RESULT] Passcreator updated, reversal record created`);
+      addLog(`[UNDO] [T=${(apiReturnTime - uiStartTime).toFixed(0)}ms] ◄ undoScan() returned`);
+      addLog(`[UNDO] [API TIME] ${(apiReturnTime - apiCallTime).toFixed(0)}ms`);
+      addLog(`[UNDO] [API RESULT] Passcreator & reversal record updated`);
       
-      console.log(`\n[UNDO] [T=${(apiReturnTime - uiStartTime).toFixed(0)}ms] ► Calling loadScans() to fetch fresh data...`);
+      addLog(`\n[UNDO] [T=${(apiReturnTime - uiStartTime).toFixed(0)}ms] ► Calling loadScans()...`);
       const dbStartTime = performance.now();
       await loadScans();
       
       const dbEndTime = performance.now();
-      console.log(`[UNDO] [T=${(dbEndTime - uiStartTime).toFixed(0)}ms] ◄ loadScans() completed (${(dbEndTime - dbStartTime).toFixed(0)}ms DB time)`);
-      console.log(`[UNDO] [DB RESULT] Fresh data fetched, setScans() state updated`);
+      addLog(`[UNDO] [T=${(dbEndTime - uiStartTime).toFixed(0)}ms] ◄ loadScans() returned`);
+      addLog(`[UNDO] [DB TIME] ${(dbEndTime - dbStartTime).toFixed(0)}ms`);
       
       const totalTime = dbEndTime - uiStartTime;
-      console.log(`\n[UNDO] [T=${totalTime.toFixed(0)}ms] SYNC CODE COMPLETE — state should be updated`);
-      console.log(`[UNDO] [TIMING BREAKDOWN]:`);
-      console.log(`       API call:  ${(apiReturnTime - apiCallTime).toFixed(0)}ms`);
-      console.log(`       DB fetch:  ${(dbEndTime - dbStartTime).toFixed(0)}ms`);
-      console.log(`       Total:     ${totalTime.toFixed(0)}ms`);
+      addLog(`\n[UNDO] [T=${totalTime.toFixed(0)}ms] ✓ SYNC CODE COMPLETE`);
+      addLog(`[UNDO] [BREAKDOWN]`);
+      addLog(`  API:  ${(apiReturnTime - apiCallTime).toFixed(0)}ms`);
+      addLog(`  DB:   ${(dbEndTime - dbStartTime).toFixed(0)}ms`);
+      addLog(`  Total: ${totalTime.toFixed(0)}ms`);
     } finally {
       const finalTime = performance.now();
-      console.log(`\n[UNDO] [T=${(finalTime - uiStartTime).toFixed(0)}ms] Finally block executing`);
+      addLog(`[UNDO] [T=${(finalTime - uiStartTime).toFixed(0)}ms] setUndoTarget(null)`);
       setUndoTarget(null);
-      const nullSetTime = performance.now();
-      console.log(`[UNDO] [T=${(nullSetTime - uiStartTime).toFixed(0)}ms] setUndoTarget(null) executed`);
       
+      addLog(`[UNDO] [T=${(finalTime - uiStartTime).toFixed(0)}ms] setUndoLoading(false)`);
       setUndoLoading(false);
-      const loadingSetTime = performance.now();
-      console.log(`[UNDO] [T=${(loadingSetTime - uiStartTime).toFixed(0)}ms] setUndoLoading(false) executed`);
       
-      console.log(`\n[UNDO] [NEXT] React will batch state updates and trigger re-render`);
-      console.log(`[UNDO] [NEXT] Dialog will close, ScanHistory will re-render with fresh scans`);
-      console.log(`[UNDO] ⏳ NOW MONITORING RENDER PHASE — watch browser for next logs...`);
-      console.log(`╚════════════════════════════════════════════════════════════════╝\n`);
+      addLog(`\n[UNDO] ⏳ Waiting for React re-render...`);
+      addLog(`╚════════════════════════════════════════════════════════════════╝`);
     }
   };
 
