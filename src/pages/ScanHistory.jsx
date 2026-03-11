@@ -19,14 +19,29 @@ export default function ScanHistory() {
   const activeConfigName = activeConfig?.name || null;
 
   const loadScans = async () => {
+    const fetchStartTime = performance.now();
+    console.log(`[Client Undo] loadScans() called at ${fetchStartTime.toFixed(0)}ms`);
     setLoading(true);
+    
+    const dbStartTime = performance.now();
     let data = await base44.entities.ScanLog.list('-created_date', 500);
+    const dbEndTime = performance.now();
+    console.log(`[Client Undo] ScanLog.list() returned at ${dbEndTime.toFixed(0)}ms (${(dbEndTime - dbStartTime).toFixed(0)}ms)`);
+    
     // Filter to only show scans for the currently selected config
     if (activeConfigId) {
       data = data.filter((s) => s.appConfigurationId === activeConfigId);
     }
+    
+    const setStartTime = performance.now();
     setScans(data);
+    const setEndTime = performance.now();
+    console.log(`[Client Undo] setScans() state updated at ${setEndTime.toFixed(0)}ms (${(setEndTime - setStartTime).toFixed(0)}ms)`);
+    console.log(`[Client Undo] Fetched ${data.length} scans, data snapshot:`, data.slice(0, 2));
+    
     setLoading(false);
+    const completeTime = performance.now();
+    console.log(`[Client Undo] loadScans() complete at ${completeTime.toFixed(0)}ms (${(completeTime - fetchStartTime).toFixed(0)}ms total)`);
   };
 
   useEffect(() => { loadScans(); }, [activeConfigId]);
