@@ -228,21 +228,15 @@ export default function Scanner() {
       const selectedConfig = getSelectedConfig();
 
       log('info', `--- CONFIG VALIDATION ---`);
-      log('info', `currently selected config name: "${selectedConfig?.name ?? 'none'}"`);
-      log('info', `currently selected config id: "${selectedConfig?.configurationId ?? selectedConfig?.id ?? 'none'}"`);
-      log('info', `currently selected config passTemplateId: "${selectedConfig?.passTemplateId ?? 'none'}"`);
-      log('info', `scanned pass template guid: "${passTemplateGuid}"`);
-      log('info', `scanned pass template name: "${passData?.passTemplateName ?? 'not set'}"`);
-
       if (!selectedConfig) {
-        log('error', `REJECTED: no config selected — go to Settings and select a configuration`);
+        log('error', `No configuration selected`);
         setResult({ status: 'error', barcodeValue, passData, error: 'No configuration selected. Go to Settings and select a configuration.', appScanSubmitted: false });
         setProcessing(false);
         return;
       }
 
       if (!passTemplateGuid) {
-        log('error', `REJECTED: scanned pass has no passTemplateGuid`);
+        log('error', `Pass has no template ID`);
         setResult({ status: 'error', barcodeValue, passData, error: 'Pass has no template ID. Cannot validate against selected configuration.', appScanSubmitted: false });
         setProcessing(false);
         return;
@@ -251,8 +245,7 @@ export default function Scanner() {
       // Strict check: scanned pass must belong to the selected config's template
       const templateMatches = selectedConfig.passTemplateId === passTemplateGuid;
       if (!templateMatches) {
-        log('error', `REJECTED: scanned pass template "${passTemplateGuid}" does NOT match selected config template "${selectedConfig.passTemplateId}"`);
-        log('error', `final decision: INVALID_MISMATCH`);
+        log('error', `Template mismatch — ${passTemplateGuid} vs ${selectedConfig.passTemplateId}`);
         setResult({
           status: 'error',
           barcodeValue,
@@ -264,7 +257,7 @@ export default function Scanner() {
         return;
       }
 
-      log('ok', `Template match confirmed ✓ — pass belongs to selected config "${selectedConfig.name}"`);
+      log('ok', `Pass validated`);
 
       const config = selectedConfig;
       const configId = config?.configurationId || config?.id || null;
@@ -283,20 +276,14 @@ export default function Scanner() {
         configLoyaltyType = 'stamps'; // safe default
       }
 
-      log('info', `currently selected config loyalty type: ${configLoyaltyType.toUpperCase()}`);
-      log('info', `final decision: ${configLoyaltyType === 'stamps' ? 'VALID_STAMPS' : 'VALID_POINTS'}`);
-
       if (configLoyaltyType === 'stamps') {
-        log('info', `branch taken: STAMPS_FLOW → adding 1 stamp via attendance scan`);
         const scanMode = config?.scanMode ?? 1;
         setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult });
       } else {
-        log('info', `branch taken: POINTS_FLOW → opening Points Loyalty screen`);
         const currentPoints = getCurrentStoredValue(passData);
         const rewardPercent = (typeof config?.rewardPercent === 'number' && !isNaN(config.rewardPercent))
           ? config.rewardPercent
           : 0.10;
-        log('info', `currentBalance: ${currentPoints}, rewardPercent: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
         setPointsFlow({ passData, configId, barcodeValue, currentPoints, rewardPercent, configName: config?.name || '' });
       }
     }
