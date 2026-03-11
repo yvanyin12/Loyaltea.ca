@@ -425,6 +425,7 @@ export default function Scanner() {
       const pointsEarned = calculatePoints(amountSpent, rewardPercent);
       const newBalance = currentPoints + pointsEarned;
 
+      log('info', `═══ POINTS TRANSACTION START ═══`);
       log('info', `--- POINTS CALCULATION ---`);
       log('info', `config name: "${configName}"`);
       log('info', `config id: "${configId}"`);
