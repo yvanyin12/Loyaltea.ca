@@ -109,9 +109,9 @@ export default function Scanner() {
 
     // Show confirmation dialog for valid passes
     if (scanResult === 'valid' && configId) {
-      // Check if this is a points mode pass
-      if (hasPointsField(passData)) {
-        const currentPoints = getCurrentPoints(passData);
+      // Check if this is a points mode pass (stored value present)
+      if (hasStoredValue(passData)) {
+        const currentPoints = getCurrentStoredValue(passData);
         const rewardPercent = config?.rewardPercent || 0.10; // default 10%
         setPointsFlow({
           passData,
@@ -121,7 +121,7 @@ export default function Scanner() {
           rewardPercent,
           configName: config?.name || '',
         });
-        log('ok', `Points mode detected. Current balance: ${currentPoints}`);
+        log('ok', `Stored value mode detected. Current balance: ${currentPoints}`);
       } else {
         // Stamps mode
         const scanMode = config?.scanMode ?? 1; // default to attendance mode
