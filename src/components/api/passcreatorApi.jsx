@@ -66,6 +66,13 @@ export const setActiveConfig = (configurationId) => {
   persistConfigs(configs);
 };
 
+export const updateSavedConfig = (updatedConfig) => {
+  const configs = getSavedConfigs().map((c) =>
+    c.configurationId === updatedConfig.configurationId ? updatedConfig : c
+  );
+  persistConfigs(configs);
+};
+
 // ── Legacy single-config helpers (used by Scanner page) ──────────
 
 export const getSelectedConfig = () => {
