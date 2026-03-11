@@ -95,12 +95,13 @@ export default function Scanner() {
         log('info', `Fetching full pass details for "${checkData.identifier}"...`);
         try {
           const fullPass = await fetchPassDetails(checkData.identifier);
-          log('ok', `Full pass details: ${JSON.stringify(fullPass)}`);
+          log('ok', `RAW fullPass response: ${JSON.stringify(fullPass)}`);
           passData = { ...checkData, ...fullPass };
         } catch (e) {
           log('error', `Failed to fetch full pass details: ${e.message}`);
         }
 
+        log('info', `RAW passData (merged): ${JSON.stringify(passData)}`);
         log('info', `passData.passTemplateGuid: "${passData.passTemplateGuid}"`);
         log('info', `passData.storedValue: ${JSON.stringify(passData.storedValue)}`);
       }
