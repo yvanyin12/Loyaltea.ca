@@ -71,7 +71,7 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
         </div>
 
         {/* Reward % — only shown for points */}
-        {loyaltyType === 'points' && (
+        {!isStamps && (
           <div className="space-y-3 border-t border-slate-800 pt-4">
             <div>
               <Label className="text-slate-300 text-sm font-medium">
