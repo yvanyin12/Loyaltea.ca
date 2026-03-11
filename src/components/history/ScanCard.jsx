@@ -43,17 +43,6 @@ export default function ScanCard({ scan, onUndo }) {
   const Icon = style.icon;
   const undoable = isUndoable(scan);
 
-  // Log every render with full scan context
-  console.log(`[Phone UI] [RENDER] ScanCard rendered at ${performance.now().toFixed(0)}ms:`, {
-    scanId: scan.id.substring(0, 8),
-    barcode: scan.barcodeValue,
-    isUndone: scan.isUndone,
-    isReversal: scan.isReversal,
-    loyaltyMode: scan.loyaltyMode,
-    pointsEarned: scan.pointsEarned,
-    newPointsBalance: scan.newPointsBalance,
-  });
-
   return (
     <div
       className={`rounded-xl border p-3 transition-opacity ${style.bg} ${

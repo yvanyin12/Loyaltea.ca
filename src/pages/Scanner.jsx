@@ -56,44 +56,6 @@ export default function Scanner() {
     setDebugLogs((prev) => [...prev, { level, message }]);
   };
 
-  // Monitor what value is being displayed to the user
-  useEffect(() => {
-    if (result && result.status === 'valid' && result.pointsData) {
-      const displayTime = performance.now();
-      log('info', `\n[DISPLAY] ═══════════════════════════════════════════════════════════`);
-      log('info', `[DISPLAY] ScanResult component RENDERED at ${displayTime.toFixed(0)}ms`);
-      log('info', `[DISPLAY] User is LOOKING AT these values:`);
-      log('info', `[DISPLAY]   Previous Balance: ${result.pointsData.previousBalance}`);
-      log('info', `[DISPLAY]   Points Earned: ${result.pointsData.pointsEarned}`);
-      log('info', `[DISPLAY]   NEW Balance (displayed): ${result.pointsData.newBalance}`);
-      log('info', `[DISPLAY] This balance came from Passcreator response`);
-      log('info', `[DISPLAY] ═══════════════════════════════════════════════════════════\n`);
-    } else if (result && result.status === 'valid' && result.passData) {
-      const displayTime = performance.now();
-      const storedVal = result.passData?.storedValue;
-      log('info', `\n[DISPLAY] ═══════════════════════════════════════════════════════════`);
-      log('info', `[DISPLAY] ScanResult component RENDERED at ${displayTime.toFixed(0)}ms`);
-      log('info', `[DISPLAY] (STAMPS mode) Displayed storedValue: ${storedVal}`);
-      log('info', `[DISPLAY] This value came from Passcreator response`);
-      log('info', `[DISPLAY] ═══════════════════════════════════════════════════════════\n`);
-    }
-  }, [result]);
-
-  // Listen for reversals (undos) from History page and clear stale result
-  useEffect(() => {
-    const unsubscribe = base44.entities.ScanLog.subscribe((event) => {
-      if (event.type === 'create' && event.data?.isReversal) {
-        log('warn', `[UNDO DETECTED] Reversal detected on History page — clearing stale Scanner result`);
-        log('warn', `[UNDO DETECTED] Reversed scan ID: ${event.data?.reversedScanId}`);
-        // Clear the stale result so user doesn't see outdated balance
-        setResult(null);
-        setProcessing(false);
-      }
-    });
-
-    return unsubscribe;
-  }, []);
-
 
 
   const handleScan = async (barcodeValue) => {
@@ -130,20 +92,10 @@ export default function Scanner() {
         log('ok', `Pass is VALID — identifier: "${checkData.identifier}"`);
 
         // Fetch full pass details to get storedValue and passTemplateGuid
-        const fetchStartTime = performance.now();
-        log('info', `Fetching full pass details for "${checkData.identifier}" at ${fetchStartTime.toFixed(0)}ms...`);
+        log('info', `Fetching full pass details for "${checkData.identifier}"...`);
         try {
           const fullPass = await fetchPassDetails(checkData.identifier);
-          const fetchEndTime = performance.now();
-          const latency = fetchEndTime - fetchStartTime;
-          
-          log('ok', `✓ RAW fullPass response (latency: ${latency.toFixed(0)}ms): ${JSON.stringify(fullPass)}`);
-          
-          // Log the current stored value that will be displayed to user
-          const storedVal = fullPass?.storedValue ?? checkData?.storedValue;
-          log('info', `[DISPLAY VALUE] Current storedValue from Passcreator: ${storedVal}`);
-          log('info', `[DISPLAY VALUE] This will be shown to user in next screen`);
-          
+          log('ok', `RAW fullPass response: ${JSON.stringify(fullPass)}`);
           passData = { ...checkData, ...fullPass };
         } catch (e) {
           log('error', `Failed to fetch full pass details: ${e.message}`);
@@ -159,9 +111,6 @@ export default function Scanner() {
       log('error', `Failed: ${err.message}`);
     }
 
-    const stateUpdateTime = performance.now();
-    log('info', `[STATE UPDATE] Setting result state at ${stateUpdateTime.toFixed(0)}ms`);
-    
     setResult({
       status: scanResult,
       barcodeValue,
@@ -169,8 +118,6 @@ export default function Scanner() {
       error: errorMsg,
       appScanSubmitted: false,
     });
-    
-    log('info', `[STATE UPDATE] Result state queued (React will render next)`);
 
     // Extract holder info from Passcreator response
     // Priority: 1) passFieldData object/array  2) passData text block  3) top-level fields

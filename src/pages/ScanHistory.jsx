@@ -6,204 +6,38 @@ import moment from 'moment-timezone';
 import RevenueStats from '../components/history/RevenueStats';
 import ScanCard from '../components/history/ScanCard';
 import UndoConfirmDialog from '../components/history/UndoConfirmDialog';
-import DebugPanel from '../components/history/DebugPanel';
 import { undoScan } from '../components/api/undoApi';
 import { getSelectedConfig } from '../components/api/passcreatorApi';
-import { parseTimestamp, getTimestampAge, isNaiveTimestampString } from '../components/api/timestampUtils';
 
 export default function ScanHistory() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [undoTarget, setUndoTarget] = useState(null); // scan pending undo confirmation
   const [undoLoading, setUndoLoading] = useState(false);
-  const [debugLogs, setDebugLogs] = useState([]);
   const activeConfig = getSelectedConfig();
   const activeConfigId = activeConfig?.configurationId || activeConfig?.id || null;
   const activeConfigName = activeConfig?.name || null;
 
-  // Helper to add debug logs
-  const addLog = (message) => {
-    setDebugLogs((prev) => [...prev, message]);
-    console.log(message);
-  };
-
   const loadScans = async () => {
-    const fetchStartTime = performance.now();
-    addLog(`\n[DEVICE] ═══════════════════════════════════════════════════════════`);
-    addLog(`[DEVICE] loadScans() invoked at ${fetchStartTime.toFixed(0)}ms`);
-    
-    const dbQueryTime = performance.now();
+    setLoading(true);
     let data = await base44.entities.ScanLog.list('-created_date', 500);
-    const dbResultTime = performance.now();
-    addLog(`[DEVICE] [DB QUERY] ScanLog.list() returned at ${dbResultTime.toFixed(0)}ms`);
-    addLog(`[DEVICE] [DB QUERY] Latency: ${(dbResultTime - dbQueryTime).toFixed(0)}ms`);
-    addLog(`[DEVICE] [DB QUERY] Raw count: ${data.length} scans`);
-    
-    // Inspect first scan BEFORE filtering to check for stale data
-    const firstScanRaw = data[0];
-    if (firstScanRaw) {
-      addLog(`[DEVICE] [DB QUERY] First scan RAW (before filter):`);
-      addLog(`  ID: ${firstScanRaw.id.substring(0, 8)}`);
-      addLog(`  Config: ${firstScanRaw.appConfigurationId}`);
-      addLog(`  isUndone: ${firstScanRaw.isUndone}`);
-      addLog(`  isReversal: ${firstScanRaw.isReversal}`);
-      addLog(`  Points: ${firstScanRaw.pointsEarned}`);
-      addLog(`  Balance: ${firstScanRaw.newPointsBalance}`);
-    }
-    
     // Filter to only show scans for the currently selected config
     if (activeConfigId) {
-      const beforeFilter = data.length;
       data = data.filter((s) => s.appConfigurationId === activeConfigId);
-      addLog(`[DEVICE] [DB FILTER] Filtered for config "${activeConfigId}": ${data.length}/${beforeFilter} scans`);
     }
-    
-    const firstScan = data[0];
-    if (firstScan) {
-      addLog(`[DEVICE] [DB FILTERED] First scan AFTER filter:`);
-      addLog(`  ID: ${firstScan.id.substring(0, 8)}`);
-      addLog(`  isUndone: ${firstScan.isUndone}`);
-      addLog(`  isReversal: ${firstScan.isReversal}`);
-      addLog(`  Points: ${firstScan.pointsEarned}`);
-      addLog(`  Balance: ${firstScan.newPointsBalance}`);
-    }
-    
-    // Log cache behavior
-    addLog(`[DEVICE] [CACHE CHECK] Checking if data looks fresh...`);
-    if (firstScan && firstScan.updated_date) {
-      const dateStr = firstScan.updated_date;
-      const isNaive = isNaiveTimestampString(dateStr);
-      
-      if (isNaive) {
-        addLog(`[TIMESTAMP DEBUG] Naive timestamp detected: "${dateStr}"`);
-        addLog(`[TIMESTAMP DEBUG] Assuming Montreal timezone (UTC-4/-5)`);
-      }
-      
-      const ageMs = getTimestampAge(dateStr);
-      const parsedDate = parseTimestamp(dateStr);
-      
-      if (parsedDate && !isNaN(parsedDate.getTime())) {
-        addLog(`[TIMESTAMP DEBUG] Raw: "${dateStr}"`);
-        addLog(`[TIMESTAMP DEBUG] Corrected UTC: ${parsedDate.toISOString()}`);
-        addLog(`[TIMESTAMP DEBUG] Now UTC: ${new Date().toISOString()}`);
-        
-        if (ageMs !== null && ageMs >= 0) {
-          addLog(`[DEVICE] [CACHE CHECK] Data freshness: ${(ageMs/1000).toFixed(1)}s ago`);
-          if (ageMs > 10000) {
-            addLog(`[DEVICE] [CACHE CHECK] ⚠️ Data is > 10 seconds old — possible stale cache!`);
-          }
-        }
-      } else {
-        addLog(`[DEVICE] [CACHE CHECK] ⚠️ Failed to parse timestamp: "${dateStr}"`);
-      }
-    }
-    
-    const setStateTime = performance.now();
-    addLog(`[DEVICE] [STATE UPDATE] setScans() called at ${setStateTime.toFixed(0)}ms with ${data.length} items`);
     setScans(data);
-    
-    const setLoadingTime = performance.now();
-    addLog(`[DEVICE] [STATE UPDATE] setLoading(false) called at ${setLoadingTime.toFixed(0)}ms`);
     setLoading(false);
-    
-    const completeTime = performance.now();
-    addLog(`[DEVICE] [COMPLETE] loadScans() sync code done at ${completeTime.toFixed(0)}ms (${(completeTime - fetchStartTime).toFixed(0)}ms total)`);
-    addLog(`[DEVICE] [RENDER PENDING] React will now batch updates and trigger re-render asynchronously`);
-    addLog(`[DEVICE] ═══════════════════════════════════════════════════════════`);
   };
 
   useEffect(() => { loadScans(); }, [activeConfigId]);
 
-  // Monitor render phase to detect when component actually displays new data
-  useEffect(() => {
-    const renderTime = performance.now();
-    
-    // Only log if there are active debug logs (undo was triggered)
-    if (debugLogs.length > 0) {
-      const firstScan = scans[0];
-      if (firstScan) {
-        addLog(`\n[RENDER] ═════════════════════════════════════════════════════════════`);
-        addLog(`[RENDER] Component re-rendered at ${renderTime.toFixed(0)}ms`);
-        addLog(`[RENDER] [AFTER] First scan visible:`);
-        addLog(`  ID: ${firstScan.id.substring(0, 8)}`);
-        addLog(`  isUndone: ${firstScan.isUndone}`);
-        addLog(`  isReversal: ${firstScan.isReversal}`);
-        addLog(`  Points: ${firstScan.pointsEarned}`);
-        addLog(`  Balance: ${firstScan.newPointsBalance}`);
-        
-        if (firstScan.updated_date) {
-          const dateStr = firstScan.updated_date;
-          const ageMs = getTimestampAge(dateStr);
-          
-          if (ageMs !== null && ageMs >= 0) {
-            addLog(`  Updated: ${(ageMs/1000).toFixed(1)}s ago`);
-          } else if (ageMs === null) {
-            addLog(`  [TS ERROR] Updated: Failed to parse "${dateStr}"`);
-          }
-        }
-      }
-      
-      addLog(`[RENDER] Total scans: ${scans.length}`);
-      addLog(`[RENDER] Loading: ${loading}`);
-      addLog(`[RENDER] ═════════════════════════════════════════════════════════════`);
-    }
-  }, [scans]);
-
   const handleUndoConfirm = async () => {
     if (!undoTarget) return;
-    const uiStartTime = performance.now();
-    
-    // Clear previous logs and start fresh
-    setDebugLogs([]);
-    
-    addLog(`╔════════════════════════════════════════════════════════════════╗`);
-    addLog(`║ UNDO FLOW TRACE - DEVICE SIDE                                 ║`);
-    addLog(`╚════════════════════════════════════════════════════════════════╝`);
-    addLog(`[UNDO] [T=0ms] Confirm Undo tapped at ${uiStartTime.toFixed(0)}ms`);
-    addLog(`[UNDO] [BEFORE] Scan ID: ${undoTarget.id.substring(0, 8)}`);
-    addLog(`[UNDO] [BEFORE] Pass ID: ${undoTarget.passIdentifier}`);
-    addLog(`[UNDO] [BEFORE] Balance: ${undoTarget.newPointsBalance || '(stamps mode)'}`);
-    addLog(`[UNDO] [BEFORE] Points earned: ${undoTarget.pointsEarned || 'N/A'}`);
-    
     setUndoLoading(true);
-    const stateSetTime = performance.now();
-    addLog(`[UNDO] [T=${(stateSetTime - uiStartTime).toFixed(0)}ms] setUndoLoading(true)`);
-    
-    try {
-      const apiCallTime = performance.now();
-      addLog(`[UNDO] [T=${(apiCallTime - uiStartTime).toFixed(0)}ms] ► Calling undoScan()...`);
-      await undoScan(undoTarget);
-      
-      const apiReturnTime = performance.now();
-      addLog(`[UNDO] [T=${(apiReturnTime - uiStartTime).toFixed(0)}ms] ◄ undoScan() returned`);
-      addLog(`[UNDO] [API TIME] ${(apiReturnTime - apiCallTime).toFixed(0)}ms`);
-      addLog(`[UNDO] [API RESULT] Passcreator & reversal record updated`);
-      
-      addLog(`\n[UNDO] [T=${(apiReturnTime - uiStartTime).toFixed(0)}ms] ► Calling loadScans()...`);
-      const dbStartTime = performance.now();
-      await loadScans();
-      
-      const dbEndTime = performance.now();
-      addLog(`[UNDO] [T=${(dbEndTime - uiStartTime).toFixed(0)}ms] ◄ loadScans() returned`);
-      addLog(`[UNDO] [DB TIME] ${(dbEndTime - dbStartTime).toFixed(0)}ms`);
-      
-      const totalTime = dbEndTime - uiStartTime;
-      addLog(`\n[UNDO] [T=${totalTime.toFixed(0)}ms] ✓ SYNC CODE COMPLETE`);
-      addLog(`[UNDO] [BREAKDOWN]`);
-      addLog(`  API:  ${(apiReturnTime - apiCallTime).toFixed(0)}ms`);
-      addLog(`  DB:   ${(dbEndTime - dbStartTime).toFixed(0)}ms`);
-      addLog(`  Total: ${totalTime.toFixed(0)}ms`);
-    } finally {
-      const finalTime = performance.now();
-      addLog(`[UNDO] [T=${(finalTime - uiStartTime).toFixed(0)}ms] setUndoTarget(null)`);
-      setUndoTarget(null);
-      
-      addLog(`[UNDO] [T=${(finalTime - uiStartTime).toFixed(0)}ms] setUndoLoading(false)`);
-      setUndoLoading(false);
-      
-      addLog(`\n[UNDO] ⏳ Waiting for React re-render...`);
-      addLog(`╚════════════════════════════════════════════════════════════════╝`);
-    }
+    await undoScan(undoTarget);
+    setUndoTarget(null);
+    setUndoLoading(false);
+    await loadScans();
   };
 
   const handleClear = async () => {
@@ -271,7 +105,6 @@ export default function ScanHistory() {
         onCancel={() => setUndoTarget(null)}
         loading={undoLoading}
       />
-      <DebugPanel logs={debugLogs} />
       <div className="max-w-lg mx-auto px-5 py-8">
 
         {/* Header */}
