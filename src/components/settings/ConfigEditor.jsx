@@ -31,7 +31,7 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
   ];
 
   const handleSave = () => {
-    if (loyaltyType === 'points') {
+    if (!isStamps) {
       const parsed = parseFloat(rewardPercent);
       if (rewardPercent === null || rewardPercent === '' || isNaN(parsed) || parsed <= 0) {
         setValidationError('Please select or enter a reward percentage before saving.');
