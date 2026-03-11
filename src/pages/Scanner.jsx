@@ -44,6 +44,9 @@ export default function Scanner() {
   const [pointsFlow, setPointsFlow] = useState(null); // { passData, configId, barcodeValue, currentPoints, rewardPercent, configName }
   const [pointsLoading, setPointsLoading] = useState(false);
 
+  // Holder info — extracted once from passData, shared across flow steps
+  const [holderInfo, setHolderInfo] = useState({ firstName: '', lastName: '', name: '', email: '', phone: '' });
+
   const proxyUrl = getProxyUrl();
 
   const log = (level, message) => {
