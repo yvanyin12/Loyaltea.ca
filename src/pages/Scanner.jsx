@@ -115,6 +115,13 @@ export default function Scanner() {
       appScanSubmitted: false,
     });
 
+    // Extract holder info from passData for logging
+    const holderName = passData?.holderName || passData?.holder?.name || passData?.firstName
+      ? [passData?.firstName, passData?.lastName].filter(Boolean).join(' ')
+      : passData?.name || passData?.owner || '';
+    const holderEmail = passData?.holderEmail || passData?.holder?.email || passData?.email || '';
+    const holderPhone = passData?.holderPhone || passData?.holder?.phone || passData?.phone || '';
+
     if (scanResult === 'valid') {
       const passTemplateGuid = passData?.passTemplateGuid || passData?.passTemplate?.guid || passData?.passTemplate?.id || null;
 
@@ -247,6 +254,9 @@ export default function Scanner() {
         appScanId: appScanId || '',
         errorMessage: errorMsg,
         isUndone: false,
+        holderName: holderName || '',
+        holderEmail: holderEmail || '',
+        holderPhone: holderPhone || '',
       });
       if (created?.id) {
         setPendingScanId(created.id);
@@ -345,6 +355,9 @@ export default function Scanner() {
         previousPointsBalance: currentPoints,
         newPointsBalance: newBalance,
         isUndone: false,
+        holderName: holderName || '',
+        holderEmail: holderEmail || '',
+        holderPhone: holderPhone || '',
       });
 
       setResult({
