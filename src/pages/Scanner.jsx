@@ -17,10 +17,10 @@ import {
   createAppScan,
 } from '../components/api/passcreatorApi';
 import {
-  getCurrentPoints,
-  hasPointsField,
+  getCurrentStoredValue,
+  hasStoredValue,
   calculatePoints,
-  updatePointsField,
+  updateStoredValue,
 } from '../components/api/pointsApi';
 import PointsConfirmation from '../components/scanner/PointsConfirmation';
 
