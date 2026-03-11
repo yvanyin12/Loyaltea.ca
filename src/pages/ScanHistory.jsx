@@ -34,10 +34,16 @@ export default function ScanHistory() {
   const handleUndoConfirm = async () => {
     if (!undoTarget) return;
     setUndoLoading(true);
-    await undoScan(undoTarget);
+    const reversalScan = await undoScan(undoTarget);
+    // Update local state instead of reloading all 500 scans
+    setScans((prev) => [
+      // Mark original as undone
+      ...prev.map((s) => s.id === undoTarget.id ? { ...s, isUndone: true } : s),
+      // Add reversal record
+      reversalScan,
+    ]);
     setUndoTarget(null);
     setUndoLoading(false);
-    await loadScans();
   };
 
   const handleClear = async () => {
