@@ -117,117 +117,74 @@ export default function Scanner() {
 
     if (scanResult === 'valid') {
       const passTemplateGuid = passData?.passTemplateGuid || passData?.passTemplate?.guid || passData?.passTemplate?.id || null;
-      const allConfigs = getSavedConfigs();
 
-      log('info', `--- CONFIG MATCHING ---`);
-      log('info', `scanned passTemplateGuid: "${passTemplateGuid}"`);
-      log('info', `saved configs: ${allConfigs.map(c => `"${c.name}" → passTemplateId="${c.passTemplateId}"`).join(' | ')}`);
+      // Use ONLY the currently selected config — never auto-switch
+      const selectedConfig = getSelectedConfig();
 
-      // Require EXACT template match — no fallback
-      if (!passTemplateGuid) {
-        log('error', `REJECTED: pass has no passTemplateGuid — cannot match to any config`);
-        setResult({ status: 'error', barcodeValue, passData, error: 'Pass has no template ID. Cannot match to a configuration.', appScanSubmitted: false });
-        setProcessing(false);
-        return;
-      }
-
-      const matchedConfig = allConfigs.find(
-        (c) => c.passTemplateId === passTemplateGuid || c.configurationId === passTemplateGuid
-      ) || null;
-
-      if (!matchedConfig) {
-        log('error', `REJECTED: no saved config has passTemplateId = "${passTemplateGuid}"`);
-        log('error', `Reason: exact template match required — fallback to selected config is disabled`);
-        setResult({ status: 'error', barcodeValue, passData, error: `No configuration matches this pass template (${passTemplateGuid}). Add a matching configuration in Settings.`, appScanSubmitted: false });
-        setProcessing(false);
-        return;
-      }
-
-      log('ok', `Exact config match found: "${matchedConfig.name}" (passTemplateId="${matchedConfig.passTemplateId}")`);
-
-      const config = matchedConfig;
-      const configId = config?.configurationId || config?.id || null;
-
-      // Determine loyalty type with priority:
-      // 1. Explicit config.loyaltyType (set via ConfigEditor)
-      // 2. Pass template name contains "stamp" → STAMPS
-      // 3. Pass template name contains "point" → POINTS
-      // 4. Final fallback: storedValue present + > 0 → POINTS, else STAMPS
-      const savedLoyaltyType = config?.loyaltyType ? config.loyaltyType.toLowerCase() : null;
-      const templateName = (passData?.passTemplateName || passData?.passTemplate?.name || '').toLowerCase();
-      const nameHasStamps = templateName.includes('stamp');
-      const nameHasPoints = templateName.includes('point');
-      let inferredLoyaltyType;
-      let inferReason;
-      if (savedLoyaltyType) {
-        inferredLoyaltyType = savedLoyaltyType;
-        inferReason = `explicitly saved in config (loyaltyType = "${config.loyaltyType}")`;
-      } else if (nameHasStamps) {
-        inferredLoyaltyType = 'stamps';
-        inferReason = `passTemplateName "${passData?.passTemplateName}" contains "stamp"`;
-      } else if (nameHasPoints) {
-        inferredLoyaltyType = 'points';
-        inferReason = `passTemplateName "${passData?.passTemplateName}" contains "point"`;
-      } else {
-        const sv = getCurrentStoredValue(passData);
-        inferredLoyaltyType = (sv > 0) ? 'points' : 'stamps';
-        inferReason = `passTemplateName has no keyword — storedValue = ${sv} → ${inferredLoyaltyType.toUpperCase()}`;
-      }
-      const detectedLoyaltyType = inferredLoyaltyType;
-
-      log('info', `--- LOYALTY TYPE DETERMINATION ---`);
-      log('info', `scanned passTemplateGuid: "${passTemplateGuid}"`);
-      log('info', `matched config name: "${config?.name}"`);
-      log('info', `matched config passTemplateId: "${config?.passTemplateId}"`);
-      log('info', `raw saved config.loyaltyType: "${config?.loyaltyType ?? 'not set'}"`);
-      log('info', `passTemplateName: "${passData?.passTemplateName ?? 'not set'}"`);
-      log('info', `passData.storedValue: ${JSON.stringify(passData?.storedValue)}`);
-      log('info', `inferred loyalty type: ${detectedLoyaltyType.toUpperCase()}`);
-      log('info', `reason: ${inferReason}`);
-
-      // Config loyalty type (same inference rules applied to the config side)
-      const configSavedType = config?.loyaltyType ? config.loyaltyType.toLowerCase() : null;
-      const configName2 = (config?.name || '').toLowerCase();
-      let configLoyaltyType;
-      if (configSavedType) {
-        configLoyaltyType = configSavedType;
-      } else if (configName2.includes('stamp')) {
-        configLoyaltyType = 'stamps';
-      } else if (configName2.includes('point')) {
-        configLoyaltyType = 'points';
-      } else {
-        configLoyaltyType = detectedLoyaltyType; // same as pass — no conflict
-      }
-
-      log('info', `--- CROSS-VALIDATION ---`);
-      log('info', `selected config name: "${config?.name}"`);
-      log('info', `selected config loyalty type: ${configLoyaltyType.toUpperCase()}`);
-      log('info', `scanned pass template name: "${passData?.passTemplateName ?? 'not set'}"`);
+      log('info', `--- CONFIG VALIDATION ---`);
+      log('info', `currently selected config name: "${selectedConfig?.name ?? 'none'}"`);
+      log('info', `currently selected config id: "${selectedConfig?.configurationId ?? selectedConfig?.id ?? 'none'}"`);
+      log('info', `currently selected config passTemplateId: "${selectedConfig?.passTemplateId ?? 'none'}"`);
       log('info', `scanned pass template guid: "${passTemplateGuid}"`);
-      log('info', `inferred pass loyalty type: ${detectedLoyaltyType.toUpperCase()}`);
+      log('info', `scanned pass template name: "${passData?.passTemplateName ?? 'not set'}"`);
 
-      if (configLoyaltyType !== detectedLoyaltyType) {
-        const decision = 'INVALID_MISMATCH';
-        log('error', `final decision: ${decision}`);
-        log('error', `Reason: config is ${configLoyaltyType.toUpperCase()} but scanned pass is ${detectedLoyaltyType.toUpperCase()} — type mismatch`);
+      if (!selectedConfig) {
+        log('error', `REJECTED: no config selected — go to Settings and select a configuration`);
+        setResult({ status: 'error', barcodeValue, passData, error: 'No configuration selected. Go to Settings and select a configuration.', appScanSubmitted: false });
+        setProcessing(false);
+        return;
+      }
+
+      if (!passTemplateGuid) {
+        log('error', `REJECTED: scanned pass has no passTemplateGuid`);
+        setResult({ status: 'error', barcodeValue, passData, error: 'Pass has no template ID. Cannot validate against selected configuration.', appScanSubmitted: false });
+        setProcessing(false);
+        return;
+      }
+
+      // Strict check: scanned pass must belong to the selected config's template
+      const templateMatches = selectedConfig.passTemplateId === passTemplateGuid;
+      if (!templateMatches) {
+        log('error', `REJECTED: scanned pass template "${passTemplateGuid}" does NOT match selected config template "${selectedConfig.passTemplateId}"`);
+        log('error', `final decision: INVALID_MISMATCH`);
         setResult({
           status: 'error',
           barcodeValue,
           passData,
-          error: `Configuration mismatch: this config is set up for ${configLoyaltyType.toUpperCase()} but the scanned pass is a ${detectedLoyaltyType.toUpperCase()} template.`,
+          error: `Template mismatch: this pass does not belong to the selected configuration "${selectedConfig.name}". Select the correct configuration in Settings.`,
           appScanSubmitted: false,
         });
         setProcessing(false);
         return;
       }
 
-      if (detectedLoyaltyType === 'stamps') {
-        log('info', `final decision: VALID_STAMPS`);
+      log('ok', `Template match confirmed ✓ — pass belongs to selected config "${selectedConfig.name}"`);
+
+      const config = selectedConfig;
+      const configId = config?.configurationId || config?.id || null;
+
+      // Determine selected config's loyalty type
+      const configSavedType = config?.loyaltyType ? config.loyaltyType.toLowerCase() : null;
+      const configNameLower = (config?.name || '').toLowerCase();
+      let configLoyaltyType;
+      if (configSavedType) {
+        configLoyaltyType = configSavedType;
+      } else if (configNameLower.includes('stamp')) {
+        configLoyaltyType = 'stamps';
+      } else if (configNameLower.includes('point') || configNameLower.includes('loyalty')) {
+        configLoyaltyType = 'points';
+      } else {
+        configLoyaltyType = 'stamps'; // safe default
+      }
+
+      log('info', `currently selected config loyalty type: ${configLoyaltyType.toUpperCase()}`);
+      log('info', `final decision: ${configLoyaltyType === 'stamps' ? 'VALID_STAMPS' : 'VALID_POINTS'}`);
+
+      if (configLoyaltyType === 'stamps') {
         log('info', `branch taken: STAMPS_FLOW → adding 1 stamp via attendance scan`);
         const scanMode = config?.scanMode ?? 1;
         setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult });
       } else {
-        log('info', `final decision: VALID_POINTS`);
         log('info', `branch taken: POINTS_FLOW → opening Points Loyalty screen`);
         const currentPoints = getCurrentStoredValue(passData);
         const rewardPercent = (typeof config?.rewardPercent === 'number' && !isNaN(config.rewardPercent))
