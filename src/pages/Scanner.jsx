@@ -236,7 +236,7 @@ export default function Scanner() {
     const extracted = extractHolderInfo(passData);
     setHolderInfo(extracted);
 
-    log('info', `ScanLog holder payload: firstName="${extracted.firstName}" lastName="${extracted.lastName}" name="${extracted.name}" email="${extracted.email}" phone="${extracted.phone}"`);
+    log('info', `Final holder payload to save: ${JSON.stringify({ holderFirstName: extracted.firstName, holderLastName: extracted.lastName, holderName: extracted.name, holderEmail: extracted.email, holderPhone: extracted.phone })}`);
 
     if (scanResult === 'valid') {
       const passTemplateGuid = passData?.passTemplateGuid || passData?.passTemplate?.guid || passData?.passTemplate?.id || null;
