@@ -34,10 +34,14 @@ export default function ScanHistory() {
   const handleUndoConfirm = async () => {
     if (!undoTarget) return;
     setUndoLoading(true);
-    await undoScan(undoTarget);
-    setUndoTarget(null);
-    setUndoLoading(false);
-    await loadScans();
+    try {
+      await undoScan(undoTarget);
+      // Immediately refetch scans to show fresh data
+      await loadScans();
+    } finally {
+      setUndoTarget(null);
+      setUndoLoading(false);
+    }
   };
 
   const handleClear = async () => {
