@@ -15,9 +15,16 @@ export default function ScanHistory() {
   const [loading, setLoading] = useState(true);
   const [undoTarget, setUndoTarget] = useState(null); // scan pending undo confirmation
   const [undoLoading, setUndoLoading] = useState(false);
+  const [debugLogs, setDebugLogs] = useState([]);
   const activeConfig = getSelectedConfig();
   const activeConfigId = activeConfig?.configurationId || activeConfig?.id || null;
   const activeConfigName = activeConfig?.name || null;
+
+  // Helper to add debug logs
+  const addLog = (message) => {
+    setDebugLogs((prev) => [...prev, message]);
+    console.log(message);
+  };
 
   const loadScans = async () => {
     const fetchStartTime = performance.now();
