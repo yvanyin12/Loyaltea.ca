@@ -97,7 +97,9 @@ export default function Settings() {
 
   if (isAdmin === null) return null; // loading
 
-  if (!isAdmin) return <RestaurantSettings />;
+  // Non-admins always see the restaurant view
+  // Admins previewing restaurant mode also see it
+  if (!isAdmin || previewRestaurant) return <RestaurantSettings />;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
