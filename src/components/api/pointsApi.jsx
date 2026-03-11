@@ -77,3 +77,39 @@ export async function updateStoredValue(proxyUrl, passId, newValue) {
     return { success: true };
   }
 }
+
+/**
+ * Trigger a pass update/push notification in Passcreator after stored value change.
+ * This ensures the wallet receives the updated pass immediately.
+ *
+ * Proxy must handle:
+ *   POST /push-pass-update { passId }
+ *   → GET https://app.passcreator.com/api/pass/{passId}  (fetch current pass)
+ *   → PUT https://app.passcreator.com/api/pass/{passId}  (re-save to trigger push)
+ *      Body: { ... all current pass fields ... }
+ *
+ * This signals Passcreator to push the updated pass to all devices holding it.
+ */
+export async function triggerPassPush(proxyUrl, passId) {
+  const fullUrl = `${proxyUrl}/push-pass-update`;
+  const payload = { passId };
+
+  console.debug('[Pass Push API] POST', fullUrl, payload);
+
+  const res = await fetch(fullUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+  console.debug('[Pass Push API] Response', res.status, text);
+
+  if (!res.ok) throw new Error(`Push pass update failed ${res.status}: ${text}`);
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { success: true };
+  }
+}
