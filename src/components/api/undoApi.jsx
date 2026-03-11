@@ -64,7 +64,12 @@ const finalizeUndo = async (originalScan, reversalFields) => {
  */
 export async function undoStampsScan(originalScan) {
   if (originalScan.appScanId) {
-    await deleteAppScan(originalScan.appScanId);
+    try {
+      await deleteAppScan(originalScan.appScanId);
+    } catch (e) {
+      // 404 means the scan record no longer exists on the provider side — treat as already removed
+      console.warn('[Undo Stamps] delete-scan failed (ignored):', e.message);
+    }
   }
 
   return finalizeUndo(originalScan, {

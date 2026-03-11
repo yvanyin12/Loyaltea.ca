@@ -18,7 +18,7 @@ export default function UndoConfirmDialog({ scan, onConfirm, onCancel, loading }
           <div>
             <h3 className="text-white font-semibold">Undo Transaction?</h3>
             <p className="text-slate-400 text-xs mt-0.5">
-              This will reverse the loyalty action in Passcreator.
+              This will reverse the loyalty transaction.
             </p>
           </div>
         </div>
