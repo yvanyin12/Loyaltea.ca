@@ -277,11 +277,14 @@ export default function Scanner() {
       const newBalance = currentPoints + pointsEarned;
 
       log('info', `--- POINTS CALCULATION ---`);
+      log('info', `config name: "${configName}"`);
+      log('info', `config id: "${configId}"`);
+      log('info', `rewardPercent from saved config: ${rewardPercent} (${(rewardPercent * 100).toFixed(2)}%)`);
       log('info', `passId (identifier): "${passData?.identifier}"`);
       log('info', `previousStoredValue: ${currentPoints}`);
       log('info', `amountSpent: $${amountSpent}`);
-      log('info', `rewardPercent: ${rewardPercent}`);
-      log('info', `pointsEarned: round(${amountSpent} × ${rewardPercent} × 1000) = ${pointsEarned}`);
+      log('info', `rewardPercent used: ${rewardPercent}`);
+      log('info', `formula: round(${amountSpent} × ${rewardPercent} × 1000) = ${pointsEarned}`);
       log('info', `newStoredValue: ${currentPoints} + ${pointsEarned} = ${newBalance}`);
 
       // Submit the app scan (attendance tracking)
