@@ -6,6 +6,7 @@ import moment from 'moment-timezone';
 import RevenueStats from '../components/history/RevenueStats';
 import ScanCard from '../components/history/ScanCard';
 import UndoConfirmDialog from '../components/history/UndoConfirmDialog';
+import DebugPanel from '../components/history/DebugPanel';
 import { undoScan } from '../components/api/undoApi';
 import { getSelectedConfig } from '../components/api/passcreatorApi';
 
