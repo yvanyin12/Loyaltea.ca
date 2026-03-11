@@ -15,6 +15,7 @@ export default function Layout({ children, currentPageName }) {
       <main className="flex-1 pb-20">
         {children}
       </main>
+      <DebugLogPanel />
 
       {/* Bottom navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-50">
