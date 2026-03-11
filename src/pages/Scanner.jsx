@@ -356,57 +356,54 @@ export default function Scanner() {
       errorMsg = e.message;
     }
 
-    // Save to database
-    try {
-      log('info', `[STAMPS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
-      const created = await base44.entities.ScanLog.create({
-        barcodeValue,
-        passIdentifier: passData?.identifier || '',
-        appConfigurationId: configId,
-        appConfigurationName: config?.name || '',
-        scanResult: 'valid',
-        isVoided: false,
-        appScanSubmitted,
-        appScanId: appScanId || '',
-        errorMessage: errorMsg,
-        loyaltyMode: 'stamps',
-        isUndone: false,
-        isReversal: false,
-        holderFirstName: holderInfo.firstName,
-        holderLastName: holderInfo.lastName,
-        holderName: holderInfo.name,
-        holderEmail: holderInfo.email,
-        holderPhone: holderInfo.phone,
-      });
-      if (created?.id) {
-        setPendingScanId(created.id);
-        // Show amount input for revenue tracking
-        if (appScanSubmitted) {
-          setShowAmountInput(true);
-        }
-      }
-    } catch (e) {
-      log('error', `Failed to save scan: ${e.message}`);
-    }
-
     // CRITICAL: Fetch updated pass data immediately after successful stamp scan
-    if (appScanSubmitted && passData?.identifier) {
-      log('info', `[REFRESH] Fetching updated pass after stamp scan...`);
-      try {
-        const updatedPass = await fetchPassDetails(passData.identifier);
-        log('ok', `[REFRESH] Updated pass data received: storedValue=${updatedPass?.storedValue}`);
-        // Update the result to show latest data
-        setResult((prev) => ({
-          ...prev,
-          passData: { ...passData, ...updatedPass },
-        }));
-      } catch (e) {
-        log('warn', `[REFRESH] Could not fetch updated pass: ${e.message}`);
-      }
-    }
+     if (appScanSubmitted && passData?.identifier) {
+       log('info', `[REFRESH] Fetching updated pass after stamp scan...`);
+       try {
+         const updatedPass = await fetchPassDetails(passData.identifier);
+         log('ok', `[REFRESH] Updated pass data received: storedValue=${updatedPass?.storedValue}`);
+         // Update the result to show latest data
+         setResult((prev) => ({
+           ...prev,
+           passData: { ...passData, ...updatedPass },
+         }));
+       } catch (e) {
+         log('warn', `[REFRESH] Could not fetch updated pass: ${e.message}`);
+       }
+     }
 
-    setConfirmPending(null);
-    setConfirmLoading(false);
+     setConfirmPending(null);
+     setConfirmLoading(false);
+
+     // Save to database in background (non-blocking)
+     log('info', `[STAMPS] Saving ScanLog to database...`);
+     base44.entities.ScanLog.create({
+       barcodeValue,
+       passIdentifier: passData?.identifier || '',
+       appConfigurationId: configId,
+       appConfigurationName: config?.name || '',
+       scanResult: 'valid',
+       isVoided: false,
+       appScanSubmitted,
+       appScanId: appScanId || '',
+       errorMessage: errorMsg,
+       loyaltyMode: 'stamps',
+       isUndone: false,
+       isReversal: false,
+       holderFirstName: holderInfo.firstName,
+       holderLastName: holderInfo.lastName,
+       holderName: holderInfo.name,
+       holderEmail: holderInfo.email,
+       holderPhone: holderInfo.phone,
+     }).then((created) => {
+       if (created?.id) {
+         setPendingScanId(created.id);
+         // Show amount input for revenue tracking
+         if (appScanSubmitted) {
+           setShowAmountInput(true);
+         }
+       }
+     }).catch((e) => log('warn', `ScanLog save failed: ${e.message}`));
     };
 
   const handleCancelScan = () => {
