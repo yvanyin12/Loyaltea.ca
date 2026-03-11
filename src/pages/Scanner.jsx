@@ -204,7 +204,7 @@ export default function Scanner() {
 
       const firstName = resolve(
         ['firstname', 'first_name', 'first name', 'fname', 'forename', 'givenname', 'given_name', 'prenom'],
-        textFirstName,
+        effectiveTextFirstName,
         ['firstName', 'first_name', 'fname', 'forename']
       );
       const lastName = resolve(
@@ -212,9 +212,8 @@ export default function Scanner() {
         textLastName,
         ['lastName', 'last_name', 'lname', 'surname']
       );
-      const name = (firstName || lastName)
-        ? [firstName, lastName].filter(Boolean).join(' ')
-        : resolve(
+      const name = [firstName, lastName].filter(Boolean).join(' ')
+        || resolve(
             ['name', 'fullname', 'full_name', 'holdername', 'displayname', 'customername'],
             textName,
             ['name', 'fullName', 'holderName', 'displayName']
