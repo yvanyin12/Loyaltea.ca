@@ -356,10 +356,16 @@ export default function Scanner() {
       errorMsg = e.message;
     }
 
-    // Show result immediately (no refetch needed for stamps—stamped/voided status is final)
-
-     setConfirmPending(null);
+    setConfirmPending(null);
      setConfirmLoading(false);
+
+     setResult({
+       status: 'valid',
+       barcodeValue,
+       passData,
+       error: '',
+       appScanSubmitted,
+     });
 
      // Save to database in background (non-blocking)
      log('info', `[STAMPS] Saving ScanLog to database...`);
@@ -374,8 +380,6 @@ export default function Scanner() {
        appScanId: appScanId || '',
        errorMessage: errorMsg,
        loyaltyMode: 'stamps',
-       isUndone: false,
-       isReversal: false,
        holderFirstName: holderInfo.firstName,
        holderLastName: holderInfo.lastName,
        holderName: holderInfo.name,
@@ -384,7 +388,6 @@ export default function Scanner() {
      }).then((created) => {
        if (created?.id) {
          setPendingScanId(created.id);
-         // Show amount input for revenue tracking
          if (appScanSubmitted) {
            setShowAmountInput(true);
          }
@@ -497,7 +500,6 @@ export default function Scanner() {
         pointsEarned,
         previousPointsBalance: currentPoints,
         newPointsBalance: newBalance,
-        isUndone: false,
         holderFirstName: holderInfo.firstName,
         holderLastName: holderInfo.lastName,
         holderName: holderInfo.name,
