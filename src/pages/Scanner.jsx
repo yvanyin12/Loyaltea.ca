@@ -118,12 +118,34 @@ export default function Scanner() {
       appScanSubmitted: false,
     });
 
-    // Extract holder info from passData for logging
-    const holderName = passData?.holderName || passData?.holder?.name || passData?.firstName
-      ? [passData?.firstName, passData?.lastName].filter(Boolean).join(' ')
-      : passData?.name || passData?.owner || '';
-    const holderEmail = passData?.holderEmail || passData?.holder?.email || passData?.email || '';
-    const holderPhone = passData?.holderPhone || passData?.holder?.phone || passData?.phone || '';
+    // Extract holder info from full pass data (Passcreator stores it in personalization fields)
+    // Try multiple locations: top-level, personalization array, holder object
+    const extractHolderInfo = (p) => {
+      if (!p) return { firstName: '', lastName: '', name: '', email: '', phone: '' };
+      // Passcreator personalization: array of { fieldType, value } or named keys
+      const pers = p.personalization || p.personalizations || {};
+      const getField = (...keys) => {
+        for (const k of keys) {
+          const v = p[k] || p?.holder?.[k] || pers[k] ||
+            (Array.isArray(pers) ? pers.find(f => f.fieldType?.toLowerCase() === k.toLowerCase())?.value : null);
+          if (v) return String(v).trim();
+        }
+        return '';
+      };
+      const firstName = getField('firstName', 'first_name', 'forename', 'givenName');
+      const lastName = getField('lastName', 'last_name', 'surname', 'familyName');
+      const name = firstName || lastName
+        ? [firstName, lastName].filter(Boolean).join(' ')
+        : getField('name', 'holderName', 'fullName', 'owner');
+      const email = getField('email', 'holderEmail', 'emailAddress', 'mail');
+      const phone = getField('phone', 'phoneNumber', 'mobile', 'holderPhone', 'telephone', 'cell');
+      return { firstName, lastName, name, email, phone };
+    };
+
+    const extracted = extractHolderInfo(passData);
+    setHolderInfo(extracted);
+    log('info', `Holder info — name: "${extracted.name}" email: "${extracted.email}" phone: "${extracted.phone}"`);
+    log('info', `Full passData keys: ${Object.keys(passData || {}).join(', ')}`);
 
     if (scanResult === 'valid') {
       const passTemplateGuid = passData?.passTemplateGuid || passData?.passTemplate?.guid || passData?.passTemplate?.id || null;
