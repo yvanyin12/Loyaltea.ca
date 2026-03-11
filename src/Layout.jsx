@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { ScanLine, History, Settings } from 'lucide-react';
-import DebugLogPanel from '@/components/DebugLogPanel';
 
 const NAV_ITEMS = [
   { label: 'Scanner', page: 'Scanner', icon: ScanLine },
@@ -15,7 +14,6 @@ export default function Layout({ children, currentPageName }) {
       <main className="flex-1 pb-20">
         {children}
       </main>
-      <DebugLogPanel />
 
       {/* Bottom navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-50">
