@@ -147,14 +147,24 @@ export default function Scanner() {
 
       const config = matchedConfig;
       const configId = config?.configurationId || config?.id || null;
-      const detectedLoyaltyType = (config?.loyaltyType ?? 'stamps').toLowerCase(); // default to stamps when unset — safer
+
+      // If loyaltyType is explicitly saved, use it.
+      // If not set, infer from storedValue: present → POINTS, absent → STAMPS.
+      const savedLoyaltyType = config?.loyaltyType ? config.loyaltyType.toLowerCase() : null;
+      const inferredFromPass = hasStoredValue(passData) ? 'points' : 'stamps';
+      const detectedLoyaltyType = savedLoyaltyType ?? inferredFromPass;
 
       log('info', `--- LOYALTY TYPE DETERMINATION ---`);
       log('info', `matched config name: "${config?.name}"`);
       log('info', `matched config id: "${configId}"`);
       log('info', `matched config passTemplateId: "${config?.passTemplateId}"`);
-      log('info', `matched config loyaltyType (saved): "${config?.loyaltyType ?? 'not set (defaulting to stamps)'}"`);
-      log('info', `detected loyalty type: ${detectedLoyaltyType.toUpperCase()}`);
+      log('info', `raw saved config.loyaltyType: "${config?.loyaltyType ?? 'not set'}"`);
+      log('info', `passData.storedValue: ${JSON.stringify(passData?.storedValue)}`);
+      if (savedLoyaltyType) {
+        log('info', `inferred loyalty type: ${detectedLoyaltyType.toUpperCase()} (reason: explicitly saved in config)`);
+      } else {
+        log('info', `inferred loyalty type: ${detectedLoyaltyType.toUpperCase()} (reason: config.loyaltyType not set — inferred from storedValue ${hasStoredValue(passData) ? `= ${getCurrentStoredValue(passData)} → POINTS` : '= absent → STAMPS'})`);
+      }
 
       if (detectedLoyaltyType === 'stamps') {
         log('warn', `STAMPS template — points flow REJECTED`);
