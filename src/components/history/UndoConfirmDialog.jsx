@@ -26,8 +26,6 @@ export default function UndoConfirmDialog({ scan, onConfirm, onCancel, loading }
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4 pb-24">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm max-h-[calc(100vh-120px)] flex flex-col">
-
-      <div className="flex flex-col flex-1 min-h-0">
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-5 pt-5 space-y-4">
           <div className="flex items-center gap-3">
