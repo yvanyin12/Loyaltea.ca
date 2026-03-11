@@ -28,72 +28,69 @@ export default function ScanHistory() {
 
   const loadScans = async () => {
     const fetchStartTime = performance.now();
-    console.log(`\n[DEVICE] ═══════════════════════════════════════════════════════════`);
-    console.log(`[DEVICE] loadScans() invoked at ${fetchStartTime.toFixed(0)}ms`);
+    addLog(`\n[DEVICE] ═══════════════════════════════════════════════════════════`);
+    addLog(`[DEVICE] loadScans() invoked at ${fetchStartTime.toFixed(0)}ms`);
     
     const dbQueryTime = performance.now();
     let data = await base44.entities.ScanLog.list('-created_date', 500);
     const dbResultTime = performance.now();
-    console.log(`[DEVICE] [DB QUERY] ScanLog.list() returned at ${dbResultTime.toFixed(0)}ms`);
-    console.log(`[DEVICE] [DB QUERY] Latency: ${(dbResultTime - dbQueryTime).toFixed(0)}ms`);
-    console.log(`[DEVICE] [DB QUERY] Raw count: ${data.length} scans`);
+    addLog(`[DEVICE] [DB QUERY] ScanLog.list() returned at ${dbResultTime.toFixed(0)}ms`);
+    addLog(`[DEVICE] [DB QUERY] Latency: ${(dbResultTime - dbQueryTime).toFixed(0)}ms`);
+    addLog(`[DEVICE] [DB QUERY] Raw count: ${data.length} scans`);
     
     // Inspect first scan BEFORE filtering to check for stale data
     const firstScanRaw = data[0];
     if (firstScanRaw) {
-      console.log(`[DEVICE] [DB QUERY] ⚠️ First scan RAW (before filter):`, {
-        id: firstScanRaw.id.substring(0, 8),
-        config: firstScanRaw.appConfigurationId,
-        isUndone: firstScanRaw.isUndone,
-        isReversal: firstScanRaw.isReversal,
-        pointsEarned: firstScanRaw.pointsEarned,
-        newPointsBalance: firstScanRaw.newPointsBalance,
-        timestamp: new Date(firstScanRaw.created_date).toISOString(),
-      });
+      addLog(`[DEVICE] [DB QUERY] First scan RAW (before filter):`);
+      addLog(`  ID: ${firstScanRaw.id.substring(0, 8)}`);
+      addLog(`  Config: ${firstScanRaw.appConfigurationId}`);
+      addLog(`  isUndone: ${firstScanRaw.isUndone}`);
+      addLog(`  isReversal: ${firstScanRaw.isReversal}`);
+      addLog(`  Points: ${firstScanRaw.pointsEarned}`);
+      addLog(`  Balance: ${firstScanRaw.newPointsBalance}`);
     }
     
     // Filter to only show scans for the currently selected config
     if (activeConfigId) {
       const beforeFilter = data.length;
       data = data.filter((s) => s.appConfigurationId === activeConfigId);
-      console.log(`[DEVICE] [DB FILTER] Filtered for config "${activeConfigId}": ${data.length}/${beforeFilter} scans`);
+      addLog(`[DEVICE] [DB FILTER] Filtered for config "${activeConfigId}": ${data.length}/${beforeFilter} scans`);
     }
     
     const firstScan = data[0];
     if (firstScan) {
-      console.log(`[DEVICE] [DB FILTERED] First scan AFTER filter:`, {
-        id: firstScan.id.substring(0, 8),
-        isUndone: firstScan.isUndone,
-        isReversal: firstScan.isReversal,
-        pointsEarned: firstScan.pointsEarned,
-        newPointsBalance: firstScan.newPointsBalance,
-      });
+      addLog(`[DEVICE] [DB FILTERED] First scan AFTER filter:`);
+      addLog(`  ID: ${firstScan.id.substring(0, 8)}`);
+      addLog(`  isUndone: ${firstScan.isUndone}`);
+      addLog(`  isReversal: ${firstScan.isReversal}`);
+      addLog(`  Points: ${firstScan.pointsEarned}`);
+      addLog(`  Balance: ${firstScan.newPointsBalance}`);
     }
     
     // Log cache behavior
-    console.log(`[DEVICE] [CACHE CHECK] Checking if data looks fresh...`);
+    addLog(`[DEVICE] [CACHE CHECK] Checking if data looks fresh...`);
     if (firstScan && firstScan.updated_date) {
       const updatedMs = new Date(firstScan.updated_date).getTime();
       const nowMs = Date.now();
       const ageMs = nowMs - updatedMs;
-      console.log(`[DEVICE] [CACHE CHECK] First scan was updated ${ageMs}ms ago (${(ageMs/1000).toFixed(1)}s)`);
+      addLog(`[DEVICE] [CACHE CHECK] First scan was updated ${ageMs}ms ago (${(ageMs/1000).toFixed(1)}s)`);
       if (ageMs > 10000) {
-        console.warn(`[DEVICE] [CACHE CHECK] ⚠️ Data is > 10 seconds old — possible stale cache!`);
+        addLog(`[DEVICE] [CACHE CHECK] ⚠️ Data is > 10 seconds old — possible stale cache!`);
       }
     }
     
     const setStateTime = performance.now();
-    console.log(`[DEVICE] [STATE UPDATE] setScans() called at ${setStateTime.toFixed(0)}ms with ${data.length} items`);
+    addLog(`[DEVICE] [STATE UPDATE] setScans() called at ${setStateTime.toFixed(0)}ms with ${data.length} items`);
     setScans(data);
     
     const setLoadingTime = performance.now();
-    console.log(`[DEVICE] [STATE UPDATE] setLoading(false) called at ${setLoadingTime.toFixed(0)}ms`);
+    addLog(`[DEVICE] [STATE UPDATE] setLoading(false) called at ${setLoadingTime.toFixed(0)}ms`);
     setLoading(false);
     
     const completeTime = performance.now();
-    console.log(`[DEVICE] [COMPLETE] loadScans() sync code done at ${completeTime.toFixed(0)}ms (${(completeTime - fetchStartTime).toFixed(0)}ms total)`);
-    console.log(`[DEVICE] [RENDER PENDING] React will now batch updates and trigger re-render asynchronously`);
-    console.log(`[DEVICE] ═══════════════════════════════════════════════════════════\n`);
+    addLog(`[DEVICE] [COMPLETE] loadScans() sync code done at ${completeTime.toFixed(0)}ms (${(completeTime - fetchStartTime).toFixed(0)}ms total)`);
+    addLog(`[DEVICE] [RENDER PENDING] React will now batch updates and trigger re-render asynchronously`);
+    addLog(`[DEVICE] ═══════════════════════════════════════════════════════════`);
   };
 
   useEffect(() => { loadScans(); }, [activeConfigId]);
