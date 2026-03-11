@@ -382,9 +382,11 @@ export default function Scanner() {
         previousPointsBalance: currentPoints,
         newPointsBalance: newBalance,
         isUndone: false,
-        holderName: holderName || '',
-        holderEmail: holderEmail || '',
-        holderPhone: holderPhone || '',
+        holderFirstName: holderInfo.firstName,
+        holderLastName: holderInfo.lastName,
+        holderName: holderInfo.name,
+        holderEmail: holderInfo.email,
+        holderPhone: holderInfo.phone,
       });
 
       setResult({
