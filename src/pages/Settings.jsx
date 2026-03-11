@@ -52,14 +52,8 @@ export default function Settings() {
   };
 
   const handleUpdateConfig = (updated) => {
-    const idx = configs.findIndex((c) => c.configurationId === updated.configurationId);
-    if (idx >= 0) {
-      const newConfigs = [...configs];
-      newConfigs[idx] = updated;
-      setConfigs(newConfigs);
-      // Save to localStorage
-      localStorage.setItem('passcreator_configs', JSON.stringify(newConfigs));
-    }
+    updateSavedConfig(updated); // persists to 'pc_configs' via persistConfigs
+    refresh();
     setEditingConfig(null);
   };
 
