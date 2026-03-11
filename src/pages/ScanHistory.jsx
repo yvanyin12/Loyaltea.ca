@@ -98,32 +98,32 @@ export default function ScanHistory() {
   // Monitor render phase to detect when component actually displays new data
   useEffect(() => {
     const renderTime = performance.now();
-    console.log(`\n[RENDER] ═══════════════════════════════════════════════════════════`);
-    console.log(`[RENDER] ScanHistory component re-rendered at ${renderTime.toFixed(0)}ms`);
     
-    const firstScan = scans[0];
-    if (firstScan) {
-      console.log(`[RENDER] First scan visible on screen:`, {
-        id: firstScan.id.substring(0, 8),
-        isUndone: firstScan.isUndone,
-        isReversal: firstScan.isReversal,
-        pointsEarned: firstScan.pointsEarned,
-        newPointsBalance: firstScan.newPointsBalance,
-      });
-      
-      if (firstScan.updated_date) {
-        const updatedMs = new Date(firstScan.updated_date).getTime();
-        const nowMs = Date.now();
-        const ageMs = nowMs - updatedMs;
-        console.log(`[RENDER] Data freshness: updated ${(ageMs/1000).toFixed(1)}s ago`);
+    // Only log if there are active debug logs (undo was triggered)
+    if (debugLogs.length > 0) {
+      const firstScan = scans[0];
+      if (firstScan) {
+        addLog(`\n[RENDER] ═════════════════════════════════════════════════════════════`);
+        addLog(`[RENDER] Component re-rendered at ${renderTime.toFixed(0)}ms`);
+        addLog(`[RENDER] [AFTER] First scan visible:`);
+        addLog(`  ID: ${firstScan.id.substring(0, 8)}`);
+        addLog(`  isUndone: ${firstScan.isUndone}`);
+        addLog(`  isReversal: ${firstScan.isReversal}`);
+        addLog(`  Points: ${firstScan.pointsEarned}`);
+        addLog(`  Balance: ${firstScan.newPointsBalance}`);
+        
+        if (firstScan.updated_date) {
+          const updatedMs = new Date(firstScan.updated_date).getTime();
+          const nowMs = Date.now();
+          const ageMs = nowMs - updatedMs;
+          addLog(`  Updated: ${(ageMs/1000).toFixed(1)}s ago`);
+        }
       }
-    } else {
-      console.log(`[RENDER] No scans to display`);
+      
+      addLog(`[RENDER] Total scans: ${scans.length}`);
+      addLog(`[RENDER] Loading: ${loading}`);
+      addLog(`[RENDER] ═════════════════════════════════════════════════════════════`);
     }
-    
-    console.log(`[RENDER] Total scans in state: ${scans.length}`);
-    console.log(`[RENDER] Loading state: ${loading}`);
-    console.log(`[RENDER] ═══════════════════════════════════════════════════════════\n`);
   }, [scans]);
 
   const handleUndoConfirm = async () => {
