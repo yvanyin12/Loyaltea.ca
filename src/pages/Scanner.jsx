@@ -119,88 +119,123 @@ export default function Scanner() {
       appScanSubmitted: false,
     });
 
-    // Extract holder info — comprehensive scan of all Passcreator response shapes
+    // Extract holder info from Passcreator response
+    // Priority: 1) passFieldData object/array  2) passData text block  3) top-level fields
     const extractHolderInfo = (p) => {
       if (!p) return { firstName: '', lastName: '', name: '', email: '', phone: '' };
 
       log('info', `--- HOLDER EXTRACTION ---`);
       log('info', `Top-level keys: ${Object.keys(p).join(', ')}`);
 
-      // Collect all possible sources
-      const sources = [p, p.holder, p.customer, p.passholder, p.owner].filter(Boolean);
+      // --- SOURCE 1: passFieldData ---
+      // Can be an array of { label/identifier/name, value } or a plain object
+      const pfd = p.passFieldData || p.passFields || p.fieldData || null;
+      log('info', `RAW passFieldData: ${JSON.stringify(pfd)}`);
 
-      // Passcreator stores personalization as array of { identifier, fieldType, value, label } 
-      // OR as an object keyed by identifier
-      const persRaw = p.personalization || p.personalizations || p.personalizationFields || p.fields || [];
-      const persArr = Array.isArray(persRaw) ? persRaw : Object.values(persRaw);
-      log('info', `personalization entries (${persArr.length}): ${JSON.stringify(persArr)}`);
-
-      // Build a flat lookup from personalization array using every possible key property
-      const persLookup = {};
-      for (const entry of persArr) {
-        if (!entry || typeof entry !== 'object') continue;
-        const val = entry.value || entry.fieldValue || entry.content || '';
-        const keys = [
-          entry.identifier, entry.fieldType, entry.fieldIdentifier,
-          entry.name, entry.key, entry.label, entry.type,
-        ].filter(Boolean);
-        for (const k of keys) {
-          persLookup[k.toLowerCase()] = val;
+      const pfdLookup = {};
+      if (pfd && typeof pfd === 'object') {
+        const entries = Array.isArray(pfd) ? pfd : Object.entries(pfd).map(([k, v]) => ({ key: k, value: v }));
+        for (const entry of entries) {
+          if (!entry || typeof entry !== 'object') continue;
+          const val = String(entry.value ?? entry.fieldValue ?? entry.content ?? '').trim();
+          if (!val) continue;
+          // Index by every descriptive key on the entry
+          const keys = [
+            entry.key, entry.identifier, entry.fieldIdentifier,
+            entry.name, entry.label, entry.fieldType, entry.type, entry.title,
+          ].filter(Boolean);
+          for (const k of keys) pfdLookup[String(k).toLowerCase()] = val;
         }
       }
-      log('info', `persLookup keys: ${Object.keys(persLookup).join(', ')}`);
+      log('info', `passFieldData lookup keys: ${Object.keys(pfdLookup).join(', ')}`);
+      log('info', `passFieldData lookup values: ${JSON.stringify(pfdLookup)}`);
 
-      // Generic getter: checks sources + persLookup
-      const get = (...keys) => {
+      // --- SOURCE 2: passData text block ---
+      // Passcreator sometimes returns a formatted text blob, e.g. "NAME: Yvan\nLAST NAME: Yin\n..."
+      const passDataText = typeof p.passData === 'string' ? p.passData : '';
+      const parseTextLine = (label) => {
+        // Match "LABEL: value" or "LABEL : value" case-insensitively
+        const re = new RegExp(`^${label}\\s*:\\s*(.+)$`, 'im');
+        const m = passDataText.match(re);
+        return m ? m[1].trim() : '';
+      };
+      const textFirstName = parseTextLine('(?:first\\s*name|fname|prenom|vorname)');
+      const textLastName  = parseTextLine('(?:last\\s*name|lname|surname|nom|nachname)');
+      const textName      = parseTextLine('(?:(?:customer\\s*)?name|full\\s*name|nom)');
+      const textEmail     = parseTextLine('(?:email(?:\\s*address)?|courriel|mail)');
+      const textPhone     = parseTextLine('(?:phone(?:\\s*number)?|mobile|telephone|tel|cell|handy)');
+      log('info', `passData text block parsed → firstName: "${textFirstName}" | lastName: "${textLastName}" | name: "${textName}" | email: "${textEmail}" | phone: "${textPhone}"`);
+
+      // --- SOURCE 3: top-level / nested objects (last resort) ---
+      const sources = [p, p.holder, p.customer, p.passholder, p.owner].filter(Boolean);
+      const getTopLevel = (...keys) => {
         for (const k of keys) {
-          const kl = k.toLowerCase();
-          // Check each source object
           for (const src of sources) {
-            const v = src[k] || src[kl];
+            const v = src[k] || src[k.toLowerCase()];
             if (v && typeof v === 'string' && v.trim()) return v.trim();
           }
-          // Check persLookup
-          const pv = persLookup[kl];
-          if (pv && typeof pv === 'string' && pv.trim()) return pv.trim();
         }
         return '';
       };
 
-      const firstName = get(
-        'firstName', 'first_name', 'firstname', 'forename', 'givenName', 'given_name',
-        'prenom', 'vorname', 'fname', 'first'
+      // Also build lookup from all personalization variants (existing logic kept as extra fallback)
+      const persRaw = p.personalization || p.personalizations || p.personalizationFields || [];
+      const persArr = Array.isArray(persRaw) ? persRaw : Object.values(persRaw);
+      const persLookup = {};
+      for (const entry of persArr) {
+        if (!entry || typeof entry !== 'object') continue;
+        const val = String(entry.value || entry.fieldValue || entry.content || '').trim();
+        if (!val) continue;
+        const keys = [entry.identifier, entry.fieldType, entry.fieldIdentifier, entry.name, entry.key, entry.label, entry.type].filter(Boolean);
+        for (const k of keys) persLookup[k.toLowerCase()] = val;
+      }
+
+      // Resolve each field: passFieldData > passData text > top-level > personalization
+      const resolve = (pfdKeys, txtVal, topKeys) => {
+        for (const k of pfdKeys) { if (pfdLookup[k]) return pfdLookup[k]; }
+        if (txtVal) return txtVal;
+        const tl = getTopLevel(...topKeys);
+        if (tl) return tl;
+        for (const k of pfdKeys) { if (persLookup[k]) return persLookup[k]; }
+        return '';
+      };
+
+      const firstName = resolve(
+        ['firstname', 'first_name', 'first name', 'fname', 'forename', 'givenname', 'given_name', 'prenom'],
+        textFirstName,
+        ['firstName', 'first_name', 'fname', 'forename']
       );
-      const lastName = get(
-        'lastName', 'last_name', 'lastname', 'surname', 'familyName', 'family_name',
-        'nom', 'nachname', 'lname', 'last'
+      const lastName = resolve(
+        ['lastname', 'last_name', 'last name', 'lname', 'surname', 'familyname', 'family_name', 'nom', 'nachname'],
+        textLastName,
+        ['lastName', 'last_name', 'lname', 'surname']
       );
-      const name = firstName || lastName
+      const name = (firstName || lastName)
         ? [firstName, lastName].filter(Boolean).join(' ')
-        : get('name', 'fullName', 'full_name', 'holderName', 'displayName', 'owner', 'title', 'passholderName');
-      const email = get(
-        'email', 'emailAddress', 'email_address', 'holderEmail', 'mail',
-        'courriel', 'e-mail', 'userEmail'
+        : resolve(
+            ['name', 'fullname', 'full_name', 'holdername', 'displayname', 'customername'],
+            textName,
+            ['name', 'fullName', 'holderName', 'displayName']
+          );
+      const email = resolve(
+        ['email', 'emailaddress', 'email_address', 'holderemail', 'mail', 'courriel'],
+        textEmail,
+        ['email', 'emailAddress', 'holderEmail', 'mail']
       );
-      const phone = get(
-        'phone', 'phoneNumber', 'phone_number', 'mobile', 'mobileNumber', 'mobile_number',
-        'holderPhone', 'telephone', 'cell', 'cellPhone', 'tel', 'handy', 'portable'
+      const phone = resolve(
+        ['phone', 'phonenumber', 'phone_number', 'mobile', 'mobilenumber', 'holderphone', 'telephone', 'cell', 'tel'],
+        textPhone,
+        ['phone', 'phoneNumber', 'mobile', 'holderPhone', 'telephone']
       );
 
-      log('info', `Extracted → firstName: "${firstName}" | lastName: "${lastName}" | name: "${name}" | email: "${email}" | phone: "${phone}"`);
+      log('info', `Final extracted → firstName: "${firstName}" | lastName: "${lastName}" | name: "${name}" | email: "${email}" | phone: "${phone}"`);
       return { firstName, lastName, name, email, phone };
     };
 
     const extracted = extractHolderInfo(passData);
     setHolderInfo(extracted);
 
-    const scanLogPayloadPreview = {
-      holderFirstName: extracted.firstName,
-      holderLastName: extracted.lastName,
-      holderName: extracted.name,
-      holderEmail: extracted.email,
-      holderPhone: extracted.phone,
-    };
-    log('info', `ScanLog holder payload preview: ${JSON.stringify(scanLogPayloadPreview)}`);
+    log('info', `ScanLog holder payload: firstName="${extracted.firstName}" lastName="${extracted.lastName}" name="${extracted.name}" email="${extracted.email}" phone="${extracted.phone}"`);
 
     if (scanResult === 'valid') {
       const passTemplateGuid = passData?.passTemplateGuid || passData?.passTemplate?.guid || passData?.passTemplate?.id || null;
