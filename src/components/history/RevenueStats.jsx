@@ -1,7 +1,8 @@
 import { TrendingUp, CheckCircle2, BarChart3 } from 'lucide-react';
 
 export default function RevenueStats({ scans }) {
-  const activeValid = scans.filter((s) => !s.isUndone && s.scanResult === 'valid');
+  // Only count original transactions (not undone, not reversals)
+  const activeValid = scans.filter((s) => !s.isUndone && !s.isReversal && s.scanResult === 'valid');
   const totalRevenue = activeValid.reduce((sum, s) => sum + (s.amountSpent || 0), 0);
   const scansWithAmount = activeValid.filter((s) => s.amountSpent > 0);
   const avgSpend = scansWithAmount.length > 0 ? totalRevenue / scansWithAmount.length : 0;
