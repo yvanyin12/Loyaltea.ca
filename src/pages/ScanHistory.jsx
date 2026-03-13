@@ -6,6 +6,7 @@ import moment from 'moment-timezone';
 import RevenueStats from '../components/history/RevenueStats';
 import ScanCard from '../components/history/ScanCard';
 import UndoConfirmDialog from '../components/history/UndoConfirmDialog';
+import ClearHistoryDialog from '../components/history/ClearHistoryDialog';
 import { undoScan } from '../components/api/undoApi';
 import { getSelectedConfig } from '../components/api/passcreatorApi';
 
@@ -14,6 +15,8 @@ export default function ScanHistory() {
   const [loading, setLoading] = useState(true);
   const [undoTarget, setUndoTarget] = useState(null); // scan pending undo confirmation
   const [undoLoading, setUndoLoading] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [clearLoading, setClearLoading] = useState(false);
   const activeConfig = getSelectedConfig();
   const activeConfigId = activeConfig?.configurationId || activeConfig?.id || null;
   const activeConfigName = activeConfig?.name || null;
@@ -40,11 +43,12 @@ export default function ScanHistory() {
     await loadScans();
   };
 
-  const handleClear = async () => {
-    const label = activeConfigName ? `"${activeConfigName}"` : 'selected configuration';
-    if (!window.confirm(`Clear all scan history for ${label}?`)) return;
+  const handleClearConfirm = async () => {
+    setClearLoading(true);
     await Promise.all(scans.map((s) => base44.entities.ScanLog.delete(s.id)));
     setScans([]);
+    setShowClearDialog(false);
+    setClearLoading(false);
   };
 
   const exportCSV = () => {
@@ -105,6 +109,14 @@ export default function ScanHistory() {
         onCancel={() => setUndoTarget(null)}
         loading={undoLoading}
       />
+      {showClearDialog && (
+        <ClearHistoryDialog
+          configName={activeConfigName}
+          onConfirm={handleClearConfirm}
+          onCancel={() => setShowClearDialog(false)}
+          loading={clearLoading}
+        />
+      )}
       <div className="max-w-lg mx-auto px-5 py-8">
 
         {/* Header */}
@@ -126,7 +138,7 @@ export default function ScanHistory() {
               <RefreshCw className="w-4 h-4" />
             </Button>
             {scans.length > 0 && (
-              <Button variant="ghost" size="icon" onClick={handleClear} className="text-slate-400 hover:text-red-400">
+              <Button variant="ghost" size="icon" onClick={() => setShowClearDialog(true)} className="text-slate-400 hover:text-red-400">
                 <Trash2 className="w-4 h-4" />
               </Button>
             )}
