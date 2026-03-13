@@ -59,25 +59,42 @@ const finalizeUndo = async (originalScan, reversalFields) => {
 
 /**
  * Undo a STAMPS scan.
- * Calls Passcreator's delete-scan endpoint to remove the stamp,
- * then creates an audit reversal record.
+ * 1. Reverts the stored value in Passcreator to remove the stamp (previousPointsBalance - 1).
+ * 2. Deletes the app scan record (best-effort).
+ * 3. Creates an audit reversal record.
  */
 export async function undoStampsScan(originalScan) {
+  // Calculate reverted stamp count
+  const currentStamps = Number(originalScan.newPointsBalance) || 0;
+  const revertedStamps = Math.max(0, currentStamps - 1);
+
+  // 1. Revert stored value in Passcreator (remove 1 stamp)
+  if (originalScan.passIdentifier) {
+    try {
+      await updateStoredValue(originalScan.passIdentifier, revertedStamps);
+    } catch (e) {
+      console.warn('[Undo Stamps] Failed to update stamp count:', e.message);
+    }
+  }
+
+  // 2. Delete app scan (best-effort)
   if (originalScan.appScanId) {
     try {
       await deleteAppScan(originalScan.appScanId);
     } catch (e) {
-      // 404 means the scan record no longer exists on the provider side — treat as already removed
       console.warn('[Undo Stamps] delete-scan failed (ignored):', e.message);
     }
   }
 
+  // 3. Create reversal audit record
   return finalizeUndo(originalScan, {
     loyaltyMode: 'stamps',
     amountSpent:
       originalScan.amountSpent != null
         ? -Math.abs(Number(originalScan.amountSpent))
         : undefined,
+    previousPointsBalance: originalScan.newPointsBalance,
+    newPointsBalance: revertedStamps,
   });
 }
 
