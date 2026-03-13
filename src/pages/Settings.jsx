@@ -67,24 +67,24 @@ export default function Settings() {
 
         {/* ── Proxy URL ── */}
         <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-4">
-          <h2 className="font-semibold text-white">Proxy Server</h2>
+          <h2 className="font-semibold text-white">Server Connection</h2>
           <div className="space-y-2">
-            <Label className="text-slate-400 text-xs">Proxy URL</Label>
+            <Label className="text-slate-400 text-xs">Server URL</Label>
             <div className="flex gap-2">
               <Input
                 type="text"
                 value={proxyUrl}
                 onChange={(e) => setProxyUrlState(e.target.value)}
-                placeholder="https://your-worker.workers.dev"
+                placeholder="https://your-server.workers.dev"
                 className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
               />
               <Button onClick={handleSaveProxy} disabled={!proxyUrl.trim()}>
                 {proxySaved ? <CheckCircle2 className="w-4 h-4" /> : 'Save'}
               </Button>
             </div>
-            {proxySaved && <p className="text-emerald-400 text-xs">Proxy URL saved!</p>}
+            {proxySaved && <p className="text-emerald-400 text-xs">Server URL saved!</p>}
             <p className="text-slate-500 text-xs">
-              The proxy server that forwards scan requests.
+              The backend server that handles scan requests.
               Authorization is handled server-side — no API key needed here.
             </p>
           </div>
@@ -94,9 +94,9 @@ export default function Settings() {
         <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-white">Configurations</h2>
+              <h2 className="font-semibold text-white">Scanner Accounts</h2>
               <p className="text-slate-500 text-xs mt-0.5">
-                Only the Active configuration is used by the scanner.
+                Only the Active account is used by the scanner.
               </p>
             </div>
             <Button size="sm" onClick={() => setSheetOpen(true)} className="gap-1.5">
