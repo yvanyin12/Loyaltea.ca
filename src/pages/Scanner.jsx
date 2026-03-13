@@ -465,7 +465,7 @@ export default function Scanner() {
       log('info', `POST ${proxyUrl}/update-stored-value`);
       log('info', `Payload: ${JSON.stringify(svPayload)}`);
       try {
-        const svResponse = await updateStoredValue(proxyUrl, passData?.identifier, newBalance);
+        const svResponse = await updateStoredValue(passData?.identifier, newBalance);
         log('ok', `Response: ${JSON.stringify(svResponse)}`);
         log('ok', `Stored value updated to ${newBalance} ✓`);
       } catch (e) {

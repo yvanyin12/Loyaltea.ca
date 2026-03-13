@@ -54,7 +54,9 @@ export const calculatePoints = (amountSpent, rewardPercent) => {
  * ⚠️  Passcreator does NOT have a /storedvalue sub-endpoint.
  *     Use the standard pass update endpoint with the storedValue field.
  */
-export async function updateStoredValue(proxyUrl, passId, newValue) {
+export async function updateStoredValue(passId, newValue) {
+  const { getProxyUrl } = await import('./passcreatorApi');
+  const proxyUrl = await getProxyUrl();
   const fullUrl = `${proxyUrl}/update-stored-value`;
   const payload = { passId, newValue };
 
