@@ -6,7 +6,7 @@ export default function ConfigList({ configs, onSetActive, onRemove, onEdit }) {
   if (configs.length === 0) {
     return (
       <p className="text-slate-500 text-sm text-center py-6">
-        No configurations saved yet. Click "Add" to get started.
+        No accounts saved yet. Click "Add" to get started.
       </p>
     );
   }

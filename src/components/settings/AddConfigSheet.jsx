@@ -236,7 +236,7 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
         className="bg-slate-900 border-slate-700 text-white rounded-t-2xl max-h-[90vh] overflow-y-auto"
       >
         <SheetHeader className="mb-4">
-          <SheetTitle className="text-white">Add Configuration</SheetTitle>
+          <SheetTitle className="text-white">Add Scanner Account</SheetTitle>
         </SheetHeader>
 
         <Tabs defaultValue="qr">
@@ -254,7 +254,7 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
             {qrState === 'scanning' && (
               <>
                 <p className="text-slate-400 text-sm text-center">
-                  Point the camera at a configuration QR code.
+                  Point the camera at an account QR code.
                 </p>
                 <QRScanner key={qrKey} onScan={handleQrScan} />
               </>
@@ -308,7 +308,7 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
             {linkState !== 'result' ? (
               <>
                 <p className="text-slate-400 text-sm">
-                  Paste a configuration link. The identifier will be extracted and matched automatically.
+                  Paste an account link. The identifier will be extracted and matched automatically.
                 </p>
                 <Input
                   value={linkInput}
@@ -316,7 +316,7 @@ export default function AddConfigSheet({ open, onClose, onAdd, savedConfigs }) {
                     setLinkInput(e.target.value);
                     setLinkError(null);
                   }}
-                  placeholder="https://... or paste a configuration link"
+                  placeholder="https://... or paste an account link"
                   className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
                 />
                 <Button

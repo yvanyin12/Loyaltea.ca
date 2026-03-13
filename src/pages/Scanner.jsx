@@ -10,6 +10,8 @@ import ScanResult from '../components/scanner/ScanResult';
 import DebugPanel from '../components/scanner/DebugPanel';
 import AmountInput from '../components/scanner/AmountInput';
 import ScanConfirmation from '../components/scanner/ScanConfirmation';
+import UndoBar from '../components/scanner/UndoBar';
+import { undoScan } from '../components/api/undoApi';
 import {
   getProxyUrl,
   getSelectedConfig,
@@ -46,6 +48,12 @@ export default function Scanner() {
 
   // Holder info — extracted once from passData, shared across flow steps
   const [holderInfo, setHolderInfo] = useState({ firstName: '', lastName: '', name: '', email: '', phone: '' });
+
+  // Undo timer state
+  const [undoState, setUndoState] = useState(null); // { scanId, countdown }
+  const [undoLoading, setUndoLoading] = useState(false);
+  const [undoMessage, setUndoMessage] = useState(null); // { type: 'success' | 'error', text: string }
+  const undoTimerRef = useRef(null);
 
   const proxyUrl = getProxyUrl();
 
@@ -381,6 +389,8 @@ export default function Scanner() {
       });
       if (created?.id) {
         setPendingScanId(created.id);
+        // Start undo timer
+        startUndoTimer(created.id);
         // Show amount input for revenue tracking
         if (appScanSubmitted) {
           setShowAmountInput(true);
@@ -462,7 +472,7 @@ export default function Scanner() {
 
       // Save to database
       log('info', `[POINTS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
-      await base44.entities.ScanLog.create({
+      const pointsScan = await base44.entities.ScanLog.create({
         barcodeValue,
         passIdentifier: passData?.identifier || '',
         appConfigurationId: configId,
@@ -483,6 +493,11 @@ export default function Scanner() {
         holderEmail: holderInfo.email,
         holderPhone: holderInfo.phone,
       });
+
+      // Start undo timer
+      if (pointsScan?.id) {
+        startUndoTimer(pointsScan.id);
+      }
 
       setResult({
         status: 'valid',
@@ -528,6 +543,55 @@ export default function Scanner() {
     if (val) handleScan(val);
   };
 
+  const startUndoTimer = (scanId) => {
+    clearUndoTimer();
+    setUndoState({ scanId, countdown: 15 });
+    setUndoMessage(null);
+    undoTimerRef.current = setInterval(() => {
+      setUndoState((prev) => {
+        if (!prev || prev.countdown <= 1) {
+          clearUndoTimer();
+          return null;
+        }
+        return { ...prev, countdown: prev.countdown - 1 };
+      });
+    }, 1000);
+  };
+
+  const clearUndoTimer = () => {
+    if (undoTimerRef.current) {
+      clearInterval(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+  };
+
+  const handleUndo = async () => {
+    if (!undoState?.scanId) return;
+    setUndoLoading(true);
+    setUndoMessage(null);
+    clearUndoTimer();
+
+    try {
+      await undoScan(undoState.scanId);
+      setUndoMessage({ type: 'success', text: 'Scan reversed successfully' });
+      setUndoState(null);
+      setTimeout(() => {
+        setUndoMessage(null);
+        handleReset();
+      }, 2000);
+    } catch (e) {
+      setUndoMessage({ type: 'error', text: e.message || 'Failed to reverse scan' });
+      setUndoState(null);
+      setTimeout(() => setUndoMessage(null), 3000);
+    } finally {
+      setUndoLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => clearUndoTimer();
+  }, []);
+
   const handleReset = () => {
     setResult(null);
     setManualValue('');
@@ -538,6 +602,9 @@ export default function Scanner() {
     setConfirmPending(null);
     setPointsFlow(null);
     setHolderInfo({ firstName: '', lastName: '', name: '', email: '', phone: '' });
+    clearUndoTimer();
+    setUndoState(null);
+    setUndoMessage(null);
   };
 
   if (!proxyUrl) {
@@ -611,6 +678,15 @@ export default function Scanner() {
         ) : result ? (
           <>
             <ScanResult result={result} onReset={handleReset} />
+            {(undoState || undoLoading || undoMessage) && (
+              <UndoBar
+                show={!!undoState}
+                countdown={undoState?.countdown || 0}
+                onUndo={handleUndo}
+                loading={undoLoading}
+                message={undoMessage}
+              />
+            )}
             {showAmountInput && result.status === 'valid' && (
               <AmountInput onSave={handleAmountSave} onSkip={handleAmountSkip} />
             )}
