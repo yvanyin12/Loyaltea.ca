@@ -11,15 +11,23 @@
  * POST /update-stored-value body: { passId, newValue }   → PUT https://app.passcreator.com/api/pass/{passId}/storedvalue
  */
 
-const DEFAULT_PROXY_URL = 'https://square-bush-df0f.yvanyin123.workers.dev';
-
 // ── Proxy URL ────────────────────────────────────────────────────
 
-export const getProxyUrl = () =>
-  localStorage.getItem('pc_proxy_url') || DEFAULT_PROXY_URL;
+let cachedProxyUrl = null;
 
-export const setProxyUrl = (url) =>
-  localStorage.setItem('pc_proxy_url', url.replace(/\/$/, ''));
+export const getProxyUrl = async () => {
+  if (cachedProxyUrl) return cachedProxyUrl;
+  
+  try {
+    const { base44 } = await import('@/api/base44Client');
+    const response = await base44.functions.invoke('getProxyUrl', {});
+    cachedProxyUrl = response.data.proxyUrl;
+    return cachedProxyUrl;
+  } catch (error) {
+    console.error('[Passcreator] Failed to get proxy URL:', error);
+    throw new Error('Server connection not configured');
+  }
+};
 
 // ── Multi-config storage ─────────────────────────────────────────
 
@@ -89,7 +97,7 @@ export const setSelectedConfig = (config) =>
 // ── Shared proxy fetch ───────────────────────────────────────────
 
 async function proxyPost(path, body) {
-  const proxyUrl = getProxyUrl();
+  const proxyUrl = await getProxyUrl();
   const fullUrl = `${proxyUrl}${path}`;
   console.debug('[Passcreator Proxy] POST', fullUrl, body);
 

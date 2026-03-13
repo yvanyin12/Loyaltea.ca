@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CheckCircle2, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import {
-  getProxyUrl,
-  setProxyUrl,
   getSavedConfigs,
   addSavedConfig,
   removeSavedConfig,
@@ -17,19 +13,11 @@ import AddConfigSheet from '../components/settings/AddConfigSheet';
 import ConfigEditor from '../components/settings/ConfigEditor';
 
 export default function Settings() {
-  const [proxyUrl, setProxyUrlState] = useState(getProxyUrl());
   const [configs, setConfigs] = useState(getSavedConfigs());
-  const [proxySaved, setProxySaved] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState(null);
 
   const refresh = () => setConfigs(getSavedConfigs());
-
-  const handleSaveProxy = () => {
-    setProxyUrl(proxyUrl.trim());
-    setProxySaved(true);
-    setTimeout(() => setProxySaved(false), 2000);
-  };
 
   const handleAdd = (cfg, makeActive = false) => {
     addSavedConfig(cfg);
@@ -62,32 +50,7 @@ export default function Settings() {
       <div className="max-w-lg mx-auto px-5 py-8 space-y-8">
         <div>
           <h1 className="text-2xl font-bold text-white">Settings</h1>
-          <p className="text-slate-400 text-sm mt-1">Configure your scanner integration</p>
-        </div>
-
-        {/* ── Proxy URL ── */}
-        <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-4">
-          <h2 className="font-semibold text-white">Server Connection</h2>
-          <div className="space-y-2">
-            <Label className="text-slate-400 text-xs">Server URL</Label>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={proxyUrl}
-                onChange={(e) => setProxyUrlState(e.target.value)}
-                placeholder="https://your-server.workers.dev"
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-              />
-              <Button onClick={handleSaveProxy} disabled={!proxyUrl.trim()}>
-                {proxySaved ? <CheckCircle2 className="w-4 h-4" /> : 'Save'}
-              </Button>
-            </div>
-            {proxySaved && <p className="text-emerald-400 text-xs">Server URL saved!</p>}
-            <p className="text-slate-500 text-xs">
-              The backend server that handles scan requests.
-              Authorization is handled server-side — no API key needed here.
-            </p>
-          </div>
+          <p className="text-slate-400 text-sm mt-1">Manage your scanner accounts</p>
         </div>
 
         {/* ── Configurations ── */}

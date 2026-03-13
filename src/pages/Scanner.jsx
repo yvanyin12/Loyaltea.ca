@@ -55,7 +55,11 @@ export default function Scanner() {
   const [undoMessage, setUndoMessage] = useState(null); // { type: 'success' | 'error', text: string }
   const undoTimerRef = useRef(null);
 
-  const proxyUrl = getProxyUrl();
+  const [proxyUrl, setProxyUrl] = useState(null);
+
+  useEffect(() => {
+    getProxyUrl().then(setProxyUrl).catch(console.error);
+  }, []);
 
   const log = (level, message) => {
     console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](
