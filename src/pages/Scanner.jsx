@@ -389,8 +389,6 @@ export default function Scanner() {
       });
       if (created?.id) {
         setPendingScanId(created.id);
-        // Start undo timer
-        startUndoTimer(created.id);
         // Show amount input for revenue tracking
         if (appScanSubmitted) {
           setShowAmountInput(true);
@@ -493,11 +491,6 @@ export default function Scanner() {
         holderEmail: holderInfo.email,
         holderPhone: holderInfo.phone,
       });
-
-      // Start undo timer
-      if (pointsScan?.id) {
-        startUndoTimer(pointsScan.id);
-      }
 
       setResult({
         status: 'valid',
@@ -678,15 +671,6 @@ export default function Scanner() {
         ) : result ? (
           <>
             <ScanResult result={result} onReset={handleReset} />
-            {(undoState || undoLoading || undoMessage) && (
-              <UndoBar
-                show={!!undoState}
-                countdown={undoState?.countdown || 0}
-                onUndo={handleUndo}
-                loading={undoLoading}
-                message={undoMessage}
-              />
-            )}
             {showAmountInput && result.status === 'valid' && (
               <AmountInput onSave={handleAmountSave} onSkip={handleAmountSkip} />
             )}
