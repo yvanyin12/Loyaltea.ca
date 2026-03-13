@@ -10,7 +10,7 @@
  *  - A new reversal ScanLog is created (isReversal = true, reversedScanId = original.id)
  */
 
-import { deleteAppScan, getProxyUrl } from './passcreatorApi';
+import { deleteAppScan } from './passcreatorApi';
 import { updateStoredValue } from './pointsApi';
 import { base44 } from '@/api/base44Client';
 
@@ -90,17 +90,17 @@ export async function undoStampsScan(originalScan) {
  * 3. Creates an audit reversal record with negative points/amount.
  */
 export async function undoPointsScan(originalScan) {
-  const proxyUrl = getProxyUrl();
-  const pointsEarned = originalScan.pointsEarned || 0;
+  const pointsEarned = Number(originalScan.pointsEarned) || 0;
 
   // Revert to the balance that existed before the original scan
-  const revertedBalance =
+  const revertedBalance = Number(
     originalScan.previousPointsBalance ??
-    (originalScan.newPointsBalance - pointsEarned);
+    (originalScan.newPointsBalance - pointsEarned)
+  );
 
   // 1. Revert stored value in Passcreator
   if (originalScan.passIdentifier) {
-    await updateStoredValue(proxyUrl, originalScan.passIdentifier, revertedBalance);
+    await updateStoredValue(originalScan.passIdentifier, revertedBalance);
   }
 
   // 2. Delete app scan (best-effort — don't fail the whole undo if this errors)
