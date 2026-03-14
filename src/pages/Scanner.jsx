@@ -318,7 +318,9 @@ export default function Scanner() {
       if (configLoyaltyType === 'stamps') {
         log('info', `branch taken: STAMPS_FLOW → adding 1 stamp via attendance scan`);
         const scanMode = config?.scanMode ?? 1;
-        setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult });
+        const currentStamps = getCurrentStoredValue(passData);
+        log('info', `currentStamps: ${currentStamps}`);
+        setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult, currentStamps });
       } else {
         log('info', `branch taken: POINTS_FLOW → opening Points Loyalty screen`);
         const currentPoints = getCurrentStoredValue(passData);
@@ -337,10 +339,12 @@ export default function Scanner() {
     if (!confirmPending) return;
     setConfirmLoading(true);
 
-    const { passData, configId, barcodeValue, scanMode } = confirmPending;
+    const { passData, configId, barcodeValue, scanMode, currentStamps } = confirmPending;
     const config = getSelectedConfig();
+    const newStamps = currentStamps + 1;
 
     log('info', `[CONFIRMED] Submitting scan to Passcreator...`);
+    log('info', `previousStamps: ${currentStamps}, newStamps: ${newStamps}`);
 
     const resolvedScanStatus = scanMode === 0 ? 0 : 2; // 0 = void, 2 = attendance
     const trackPayload = {
@@ -369,6 +373,16 @@ export default function Scanner() {
       errorMsg = e.message;
     }
 
+    // Update stored value (stamp count) in Passcreator
+    log('info', `--- STORED VALUE UPDATE (STAMPS) ---`);
+    log('info', `Updating stamp count from ${currentStamps} to ${newStamps}`);
+    try {
+      await updateStoredValue(passData?.identifier, newStamps);
+      log('ok', `Stamp count updated to ${newStamps} ✓`);
+    } catch (e) {
+      log('error', `FAILED to update stamp count: ${e.message}`);
+    }
+
     // Save to database
     try {
       log('info', `[STAMPS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
@@ -383,6 +397,8 @@ export default function Scanner() {
         appScanId: appScanId || '',
         errorMessage: errorMsg,
         loyaltyMode: 'stamps',
+        previousPointsBalance: currentStamps,
+        newPointsBalance: newStamps,
         isUndone: false,
         isReversal: false,
         holderFirstName: holderInfo.firstName,
@@ -393,6 +409,18 @@ export default function Scanner() {
       });
       if (created?.id) {
         setPendingScanId(created.id);
+        // Show result with stamp data
+        setResult({
+          status: 'valid',
+          barcodeValue,
+          passData,
+          error: '',
+          appScanSubmitted,
+          stampsData: {
+            previousBalance: currentStamps,
+            newBalance: newStamps,
+          },
+        });
         // Show amount input for revenue tracking
         if (appScanSubmitted) {
           setShowAmountInput(true);
@@ -666,6 +694,7 @@ export default function Scanner() {
             <ScanConfirmation
               passData={confirmPending.passData}
               configName={confirmPending.configName}
+              currentStamps={confirmPending.currentStamps}
               onConfirm={handleConfirmScan}
               onCancel={handleCancelScan}
               loading={confirmLoading}

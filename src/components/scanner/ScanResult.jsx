@@ -101,6 +101,23 @@ export default function ScanResult({ result, onReset }) {
         </div>
       )}
 
+      {result.stampsData && (
+        <div className="bg-purple-950/50 border border-purple-800 rounded-xl p-4 space-y-2 text-left">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-300">Previous Stamps</span>
+            <span className="text-white font-mono font-semibold text-lg">{result.stampsData.previousBalance}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm border-t border-purple-800 pt-2">
+            <span className="text-purple-300 font-semibold">Stamp Added</span>
+            <span className="text-purple-300 font-mono font-semibold text-lg">+1</span>
+          </div>
+          <div className="flex items-center justify-between text-sm border-t border-purple-800 pt-2">
+            <span className="text-emerald-300 font-semibold">New Total</span>
+            <span className="text-emerald-300 font-mono font-semibold text-lg">{result.stampsData.newBalance}</span>
+          </div>
+        </div>
+      )}
+
       <Button
         onClick={onReset}
         className="w-full h-12 text-base font-semibold gap-2"

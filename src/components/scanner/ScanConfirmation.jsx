@@ -1,7 +1,7 @@
 import { Check, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function ScanConfirmation({ passData, configName, onConfirm, onCancel, loading }) {
+export default function ScanConfirmation({ passData, configName, currentStamps, onConfirm, onCancel, loading }) {
   return (
     <div className="w-full max-w-sm rounded-xl bg-slate-800/80 border border-slate-700 p-5 space-y-4">
       <div className="space-y-3">
@@ -27,6 +27,14 @@ export default function ScanConfirmation({ passData, configName, onConfirm, onCa
               <p className="text-white text-sm">{configName}</p>
             </div>
           ) : null}
+
+          {typeof currentStamps === 'number' && (
+            <div className="bg-blue-950/30 border border-blue-800/50 rounded-lg p-3 mt-2">
+              <p className="text-slate-400 text-xs mb-1">Current Stamps</p>
+              <p className="text-white text-2xl font-bold">{currentStamps}</p>
+              <p className="text-blue-400 text-xs mt-1">+1 stamp will be added</p>
+            </div>
+          )}
         </div>
       </div>
 
