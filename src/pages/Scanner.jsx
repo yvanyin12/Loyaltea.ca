@@ -450,7 +450,6 @@ export default function Scanner() {
     setPointsLoading(true);
 
     const { passData, configId, barcodeValue, currentPoints, rewardPercent, configName } = pointsFlow;
-    const config = getSelectedConfig();
 
     try {
       // Calculate points earned
