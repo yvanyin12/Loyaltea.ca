@@ -132,6 +132,27 @@ export default function ScanCard({ scan, onUndo }) {
             </div>
           )}
 
+          {/* Stamps */}
+          {scan.loyaltyMode === 'stamps' && (
+            <div className="text-xs mt-1 space-y-0.5">
+              {scan.newPointsBalance != null && scan.previousPointsBalance != null && (
+                <p
+                  className={`font-semibold ${
+                    scan.newPointsBalance < scan.previousPointsBalance ? 'text-red-400' : 'text-blue-400'
+                  }`}
+                >
+                  {scan.newPointsBalance >= scan.previousPointsBalance ? '+' : ''}
+                  {scan.newPointsBalance - scan.previousPointsBalance} stamp
+                </p>
+              )}
+              {scan.newPointsBalance != null && (
+                <p className="text-emerald-400">
+                  Balance: {scan.newPointsBalance} stamp{scan.newPointsBalance !== 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Error message */}
           {scan.errorMessage && (
             <p className="text-red-400/70 text-xs mt-1 line-clamp-2">
