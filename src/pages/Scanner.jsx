@@ -295,7 +295,7 @@ export default function Scanner() {
 
       log('ok', `Template match confirmed ✓ — pass belongs to selected config "${selectedConfig.name}"`);
 
-      const config = selectedConfig;
+      const config = selectedConfig; // use fresh config from localStorage
       const configId = config?.configurationId || config?.id || null;
 
       // Determine loyalty type from saved field first, then name inference, then default to points
