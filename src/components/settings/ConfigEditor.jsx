@@ -107,7 +107,9 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
                 step="0.01"
                 value={rewardPercent ?? ''}
                 onChange={(e) => setRewardPercent(e.target.value)}
-                className="bg-slate-800 border-slate-700 text-white mt-1"
+                className={`bg-slate-800 text-white mt-1 ${
+                  rewardPercent === null || rewardPercent === '' ? 'border-red-600/60' : 'border-slate-700'
+                }`}
                 placeholder="e.g. 0.10 for 10%"
               />
             </div>
