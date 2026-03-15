@@ -295,14 +295,13 @@ export default function Scanner() {
 
       log('ok', `Template match confirmed ✓ — pass belongs to selected config "${selectedConfig.name}"`);
 
-      const config = selectedConfig;
+      // Always re-read fresh from localStorage — prevents stale config from prior scans
+      const config = getSelectedConfig();
       const configId = config?.configurationId || config?.id || null;
 
-      // Determine selected config's loyalty type
-      // Re-read from localStorage to ensure we have the latest saved value (not stale state)
-      const freshConfig = getSelectedConfig();
-      const configSavedType = freshConfig?.loyaltyType ? freshConfig.loyaltyType.toLowerCase() : null;
-      const configNameLower = (freshConfig?.name || '').toLowerCase();
+      // Determine loyalty type from saved field first, then name inference, then default to points
+      const configSavedType = config?.loyaltyType ? config.loyaltyType.toLowerCase() : null;
+      const configNameLower = (config?.name || '').toLowerCase();
       let configLoyaltyType;
       if (configSavedType) {
         configLoyaltyType = configSavedType;
@@ -315,16 +314,11 @@ export default function Scanner() {
       }
 
       log('info', `--- LOYALTY TYPE DECISION ---`);
-      log('info', `config.loyaltyType (saved): "${freshConfig?.loyaltyType ?? '(not set)'}"`);
-      log('info', `config.name: "${freshConfig?.name ?? ''}"`);
+      log('info', `config.loyaltyType (saved): "${config?.loyaltyType ?? '(not set)'}"`);
+      log('info', `config.name: "${config?.name ?? ''}"`);
       log('info', `resolved loyaltyType: "${configLoyaltyType}"`);
-      log('info', `config.passTemplateId: "${freshConfig?.passTemplateId ?? '(not set)'}"`);
-      log('info', `config.rewardPercent: ${freshConfig?.rewardPercent ?? '(not set)'}`);
-
-      // Overwrite config/configId with the freshly-read values to prevent stale data
-      const configId = freshConfig?.configurationId || freshConfig?.id || null;
-
-      log('info', `currently selected config loyalty type: ${configLoyaltyType.toUpperCase()}`);
+      log('info', `config.passTemplateId: "${config?.passTemplateId ?? '(not set)'}"`);
+      log('info', `config.rewardPercent: ${config?.rewardPercent ?? '(not set)'}`);
       log('info', `final decision: ${configLoyaltyType === 'stamps' ? 'VALID_STAMPS' : 'VALID_POINTS'}`);
 
       if (configLoyaltyType === 'stamps') {
