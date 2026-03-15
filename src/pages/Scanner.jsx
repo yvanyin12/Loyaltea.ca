@@ -299,8 +299,10 @@ export default function Scanner() {
       const configId = config?.configurationId || config?.id || null;
 
       // Determine selected config's loyalty type
-      const configSavedType = config?.loyaltyType ? config.loyaltyType.toLowerCase() : null;
-      const configNameLower = (config?.name || '').toLowerCase();
+      // Re-read from localStorage to ensure we have the latest saved value (not stale state)
+      const freshConfig = getSelectedConfig();
+      const configSavedType = freshConfig?.loyaltyType ? freshConfig.loyaltyType.toLowerCase() : null;
+      const configNameLower = (freshConfig?.name || '').toLowerCase();
       let configLoyaltyType;
       if (configSavedType) {
         configLoyaltyType = configSavedType;
@@ -309,8 +311,18 @@ export default function Scanner() {
       } else if (configNameLower.includes('point') || configNameLower.includes('loyalty')) {
         configLoyaltyType = 'points';
       } else {
-        configLoyaltyType = 'stamps'; // safe default
+        configLoyaltyType = 'points'; // default to points when ambiguous
       }
+
+      log('info', `--- LOYALTY TYPE DECISION ---`);
+      log('info', `config.loyaltyType (saved): "${freshConfig?.loyaltyType ?? '(not set)'}"`);
+      log('info', `config.name: "${freshConfig?.name ?? ''}"`);
+      log('info', `resolved loyaltyType: "${configLoyaltyType}"`);
+      log('info', `config.passTemplateId: "${freshConfig?.passTemplateId ?? '(not set)'}"`);
+      log('info', `config.rewardPercent: ${freshConfig?.rewardPercent ?? '(not set)'}`);
+
+      // Overwrite config/configId with the freshly-read values to prevent stale data
+      const configId = freshConfig?.configurationId || freshConfig?.id || null;
 
       log('info', `currently selected config loyalty type: ${configLoyaltyType.toUpperCase()}`);
       log('info', `final decision: ${configLoyaltyType === 'stamps' ? 'VALID_STAMPS' : 'VALID_POINTS'}`);
