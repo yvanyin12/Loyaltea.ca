@@ -320,6 +320,23 @@ export default function Scanner() {
       log('info', `config.rewardPercent: ${config?.rewardPercent ?? '(not set)'}`);
       log('info', `final decision: ${configLoyaltyType === 'stamps' ? 'VALID_STAMPS' : 'VALID_POINTS'}`);
 
+      // Guard: points config must have a valid rewardPercent saved before scanning
+      if (configLoyaltyType === 'points') {
+        const rp = config?.rewardPercent;
+        if (rp == null || isNaN(Number(rp)) || Number(rp) <= 0) {
+          log('error', `REJECTED: points config has no valid rewardPercent — setup incomplete`);
+          setResult({
+            status: 'error',
+            barcodeValue,
+            passData,
+            error: 'Points reward percentage is not set. Please complete the points setup in Settings before scanning.',
+            appScanSubmitted: false,
+          });
+          setProcessing(false);
+          return;
+        }
+      }
+
       if (configLoyaltyType === 'stamps') {
         log('info', `branch taken: STAMPS_FLOW → adding 1 stamp via attendance scan`);
         const scanMode = config?.scanMode ?? 1;
