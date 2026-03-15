@@ -126,7 +126,9 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
         )}
 
         {validationError && (
-          <p className="text-red-400 text-xs">{validationError}</p>
+          <div className="bg-red-950/40 border border-red-700/60 rounded-lg px-3 py-2">
+            <p className="text-red-400 text-xs font-medium">{validationError}</p>
+          </div>
         )}
 
         <div className="flex gap-2 border-t border-slate-800 pt-4">
