@@ -39,6 +39,12 @@ const AuthenticatedApp = () => {
     }
   }
 
+  // Block non-admin users
+  const { user } = useAuth();
+  if (user && user.role !== 'admin') {
+    return <AccessDenied />;
+  }
+
   // Render the main app
   return (
     <Routes>
