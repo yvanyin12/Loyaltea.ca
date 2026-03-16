@@ -101,6 +101,35 @@ export default function ScanResult({ result, onReset }) {
         </div>
       )}
 
+      {result.redemptionData && (
+        <div className="bg-red-950/50 border border-red-800 rounded-xl p-4 space-y-2 text-left">
+          <div className="flex items-center gap-2 mb-1">
+            <Gift className="w-4 h-4 text-red-400" />
+            <span className="text-red-300 font-bold text-sm uppercase tracking-wide">Points Redeemed</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-300">Previous Balance</span>
+            <span className="text-white font-mono font-semibold">{result.redemptionData.previousBalance.toLocaleString()} pts</span>
+          </div>
+          <div className="flex items-center justify-between text-sm border-t border-red-800 pt-2">
+            <span className="text-red-300 font-semibold flex items-center gap-1">
+              <Minus className="w-4 h-4" /> Points Spent
+            </span>
+            <span className="text-red-300 font-mono font-semibold">−{result.redemptionData.pointsSpent.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm border-t border-red-800 pt-2">
+            <span className="text-emerald-300 font-semibold">New Balance</span>
+            <span className="text-emerald-300 font-mono font-semibold">{result.redemptionData.newBalance.toLocaleString()} pts</span>
+          </div>
+          {result.redemptionData.note && (
+            <div className="border-t border-red-800 pt-2">
+              <p className="text-slate-500 text-xs">Note</p>
+              <p className="text-slate-300 text-sm">{result.redemptionData.note}</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {result.stampsData && (
         <div className="bg-purple-950/50 border border-purple-800 rounded-xl p-4 space-y-2 text-left">
           <div className="flex items-center justify-between text-sm">
