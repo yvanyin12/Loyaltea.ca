@@ -697,7 +697,7 @@ export default function Scanner() {
     clearUndoTimer();
 
     try {
-      await undoScan(undoState.scanId);
+      await undoScan(undoState.scan || undoState.scanId);
       setUndoMessage({ type: 'success', text: 'Scan reversed successfully' });
       setUndoState(null);
       setTimeout(() => {
