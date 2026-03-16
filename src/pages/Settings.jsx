@@ -18,6 +18,11 @@ export default function Settings() {
   const [configs, setConfigs] = useState(getSavedConfigs());
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState(null);
+  const [isOwner, setIsOwner] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then((user) => setIsOwner(user?.role === 'owner'));
+  }, []);
 
   const refresh = () => setConfigs(getSavedConfigs());
 
