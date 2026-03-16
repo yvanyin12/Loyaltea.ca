@@ -24,6 +24,25 @@ export default function UserManagement() {
     });
   }, []);
 
+  const handleInvite = async (e) => {
+    e.preventDefault();
+    const email = inviteEmail.trim();
+    if (!email) return;
+    setInviting(true);
+    setInviteMsg(null);
+    try {
+      await base44.users.inviteUser(email, 'admin');
+      setInviteMsg({ type: 'success', text: `Invite sent to ${email}` });
+      setInviteEmail('');
+      // Refresh user list
+      const allUsers = await base44.entities.User.list();
+      setUsers(allUsers);
+    } catch (err) {
+      setInviteMsg({ type: 'error', text: err.message || 'Failed to send invite' });
+    }
+    setInviting(false);
+  };
+
   const toggleAdmin = async (user) => {
     setUpdating(user.id);
     const newRole = user.role === 'admin' ? 'user' : 'admin';
