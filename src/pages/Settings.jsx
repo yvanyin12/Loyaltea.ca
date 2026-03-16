@@ -11,6 +11,7 @@ import {
 import ConfigList from '../components/settings/ConfigList';
 import AddConfigSheet from '../components/settings/AddConfigSheet';
 import ConfigEditor from '../components/settings/ConfigEditor';
+import UserManagement from './UserManagement';
 
 export default function Settings() {
   const [configs, setConfigs] = useState(getSavedConfigs());
