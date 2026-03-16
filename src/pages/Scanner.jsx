@@ -616,12 +616,15 @@ export default function Scanner() {
         previousPointsBalance: currentPoints,
         newPointsBalance: newBalance,
         isUndone: false,
+        isRedemption: false,
         holderFirstName: holderInfo.firstName,
         holderLastName: holderInfo.lastName,
         holderName: holderInfo.name,
         holderEmail: holderInfo.email,
         holderPhone: holderInfo.phone,
       });
+
+      if (pointsScan?.id) startUndoTimer(pointsScan);
 
       setResult({
         status: 'valid',
