@@ -529,10 +529,6 @@ export default function Scanner() {
         },
       });
 
-      if (redemptionScan?.id) {
-        startUndoTimer(redemptionScan);
-      }
-
       setRedeemFlow(null);
     } catch (e) {
       log('error', `Redemption failed: ${e.message}`);
@@ -826,7 +822,7 @@ export default function Scanner() {
             {showAmountInput && result.status === 'valid' && (
               <AmountInput onSave={handleAmountSave} onSkip={handleAmountSkip} />
             )}
-            {undoState && !showAmountInput && (
+            {undoState && !showAmountInput && !result?.redemptionData && (
               <UndoTimer
                 onUndo={handleUndo}
                 onExpire={() => setUndoState(null)}
