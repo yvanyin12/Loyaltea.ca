@@ -82,16 +82,18 @@ export default function Settings() {
           />
         </div>
 
-        {/* ── User Management ── */}
-        <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-4">
-          <div>
-            <h2 className="font-semibold text-white">User Management</h2>
-            <p className="text-slate-500 text-xs mt-0.5">
-              Promote or remove admin access for registered users.
-            </p>
+        {/* ── User Management (Owner only) ── */}
+        {isOwner && (
+          <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-4">
+            <div>
+              <h2 className="font-semibold text-white">User Management</h2>
+              <p className="text-slate-500 text-xs mt-0.5">
+                Promote or remove admin access for registered users.
+              </p>
+            </div>
+            <UserManagement />
           </div>
-          <UserManagement />
-        </div>
+        )}
       </div>
 
       <AddConfigSheet
