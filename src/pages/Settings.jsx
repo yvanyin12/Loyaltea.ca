@@ -12,13 +12,18 @@ import {
 import ConfigList from '../components/settings/ConfigList';
 import AddConfigSheet from '../components/settings/AddConfigSheet';
 import ConfigEditor from '../components/settings/ConfigEditor';
+import RewardsEditor from '../components/settings/RewardsEditor';
 import UserManagement from './UserManagement';
+import { getRewards } from '@/lib/rewardsStore';
 
 export default function Settings() {
   const [configs, setConfigs] = useState(getSavedConfigs());
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
+  const [rewards, setRewards] = useState(getRewards());
+
+  const refreshRewards = () => setRewards(getRewards());
 
   useEffect(() => {
     base44.auth.me().then((user) => setIsOwner(user?.role === 'owner'));
@@ -80,6 +85,17 @@ export default function Settings() {
             onRemove={handleRemove}
             onEdit={handleEditConfig}
           />
+        </div>
+
+        {/* ── Quick Rewards ── */}
+        <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-4">
+          <div>
+            <h2 className="font-semibold text-white">Quick Rewards</h2>
+            <p className="text-slate-500 text-xs mt-0.5">
+              Configure the preset rewards shown on the Spend Points screen.
+            </p>
+          </div>
+          <RewardsEditor rewards={rewards} onRefresh={refreshRewards} />
         </div>
 
         {/* ── User Management (Owner only) ── */}
