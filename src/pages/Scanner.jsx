@@ -666,9 +666,11 @@ export default function Scanner() {
     if (val) handleScan(val);
   };
 
-  const startUndoTimer = (scanId) => {
+  // scanOrId can be a scan object or just a scanId string (legacy)
+  const startUndoTimer = (scanOrId) => {
     clearUndoTimer();
-    setUndoState({ scanId, countdown: 15 });
+    const scan = typeof scanOrId === 'object' ? scanOrId : { id: scanOrId };
+    setUndoState({ scan, scanId: scan.id, countdown: 15 });
     setUndoMessage(null);
     undoTimerRef.current = setInterval(() => {
       setUndoState((prev) => {
