@@ -434,6 +434,7 @@ export default function Scanner() {
       });
       if (created?.id) {
         setPendingScanId(created.id);
+        startUndoTimer(created);
         // Show result with stamp data
         setResult({
           status: 'valid',
