@@ -58,9 +58,9 @@ export default function Settings() {
         <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-white">Scanner Accounts</h2>
+              <h2 className="font-semibold text-white">Scanner Configurations</h2>
               <p className="text-slate-500 text-xs mt-0.5">
-                Only the Active account is used by the scanner.
+                Only the Active configuration is used by the scanner.
               </p>
             </div>
             <Button size="sm" onClick={() => setSheetOpen(true)} className="gap-1.5">

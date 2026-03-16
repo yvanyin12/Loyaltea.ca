@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Shield, ShieldOff, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Shield, ShieldOff, Loader2, UserPlus } from 'lucide-react';
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
