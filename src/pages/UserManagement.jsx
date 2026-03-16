@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, ShieldOff, Loader2, UserPlus } from 'lucide-react';
+import { Shield, ShieldOff, Loader2, UserPlus, Crown } from 'lucide-react';
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -37,7 +37,7 @@ export default function UserManagement() {
     setInviteMsg(null);
     try {
       await base44.users.inviteUser(email, 'admin');
-      setInviteMsg({ type: 'success', text: `Invite sent to ${email}` });
+      setInviteMsg({ type: 'success', text: `Invite sent to ${email}. They will receive an email to create their account as Admin.` });
       setInviteEmail('');
       const allUsers = await base44.entities.User.list();
       setUsers(allUsers);
@@ -71,12 +71,16 @@ export default function UserManagement() {
     );
   }
 
+  const ownerUser = users.find(u => u.id === me?.id);
+  const otherUsers = users.filter(u => u.role !== 'owner');
+
   return (
     <div className="space-y-4">
+      {/* Invite form */}
       <form onSubmit={handleInvite} className="flex gap-2">
         <Input
           type="email"
-          placeholder="Email address"
+          placeholder="Email address to invite as Admin"
           value={inviteEmail}
           onChange={(e) => setInviteEmail(e.target.value)}
           className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 text-sm h-9"
@@ -91,9 +95,26 @@ export default function UserManagement() {
           {inviteMsg.text}
         </p>
       )}
+
       <div className="space-y-3">
-        {users.filter(u => u.role !== 'owner').map((user) => {
-          const isMe = user.id === me?.id;
+        {/* Owner row (always shown first) */}
+        {ownerUser && (
+          <div className="flex items-center justify-between bg-amber-900/20 rounded-xl px-4 py-3 border border-amber-700/40">
+            <div className="min-w-0">
+              <p className="text-white text-sm font-medium truncate">{ownerUser.full_name || '—'}</p>
+              <p className="text-slate-400 text-xs truncate">{ownerUser.email}</p>
+            </div>
+            <div className="flex items-center gap-2 ml-3 shrink-0">
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                <Crown className="w-3 h-3" /> Owner
+              </span>
+              <span className="text-xs text-slate-500 italic">you</span>
+            </div>
+          </div>
+        )}
+
+        {/* Other users */}
+        {otherUsers.map((user) => {
           const isAdmin = user.role === 'admin';
           return (
             <div key={user.id} className="flex items-center justify-between bg-slate-800/60 rounded-xl px-4 py-3 border border-slate-700/50">
@@ -107,29 +128,28 @@ export default function UserManagement() {
                 }`}>
                   {isAdmin ? 'Admin' : 'User'}
                 </span>
-                {!isMe && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className={`gap-1.5 text-xs h-7 px-2 ${isAdmin ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20'}`}
-                    onClick={() => toggleAdmin(user)}
-                    disabled={updating === user.id}
-                  >
-                    {updating === user.id ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : isAdmin ? (
-                      <><ShieldOff className="w-3 h-3" /> Remove</>
-                    ) : (
-                      <><Shield className="w-3 h-3" /> Make Admin</>
-                    )}
-                  </Button>
-                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className={`gap-1.5 text-xs h-7 px-2 ${isAdmin ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20'}`}
+                  onClick={() => toggleAdmin(user)}
+                  disabled={updating === user.id}
+                >
+                  {updating === user.id ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : isAdmin ? (
+                    <><ShieldOff className="w-3 h-3" /> Remove</>
+                  ) : (
+                    <><Shield className="w-3 h-3" /> Make Admin</>
+                  )}
+                </Button>
               </div>
             </div>
           );
         })}
-        {users.filter(u => u.role !== 'owner').length === 0 && (
-          <p className="text-slate-500 text-sm text-center py-4">No users found.</p>
+
+        {otherUsers.length === 0 && (
+          <p className="text-slate-500 text-sm text-center py-4">No other users yet. Invite admins above.</p>
         )}
       </div>
     </div>
