@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, AlertCircle, Wifi, RotateCcw } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Wifi, RotateCcw, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import moment from 'moment-timezone';
 import { isUndoable } from '../api/undoApi';
