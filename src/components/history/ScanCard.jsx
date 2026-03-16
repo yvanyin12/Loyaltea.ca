@@ -59,6 +59,11 @@ export default function ScanCard({ scan, onUndo }) {
               <span className={`text-sm font-semibold ${style.color}`}>
                 {style.label}
               </span>
+              {scan.isRedemption && (
+                <span className="text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded-full leading-none flex items-center gap-1">
+                  <Gift className="w-3 h-3" /> REDEMPTION
+                </span>
+              )}
               {scan.isReversal && (
                 <span className="text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded-full leading-none">
                   REVERSAL
