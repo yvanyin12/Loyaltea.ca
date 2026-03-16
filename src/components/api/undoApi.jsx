@@ -145,12 +145,39 @@ export async function undoPointsScan(originalScan) {
   });
 }
 
+// ── Redemption ────────────────────────────────────────────────────────────────
+
+/**
+ * Undo a REDEMPTION scan.
+ * Restores the points that were spent (add pointsSpent back).
+ */
+export async function undoRedemptionScan(originalScan) {
+  // Revert to the balance before redemption
+  const revertedBalance = Number(originalScan.previousPointsBalance ?? 0);
+
+  if (originalScan.passIdentifier) {
+    await updateStoredValue(originalScan.passIdentifier, revertedBalance);
+  }
+
+  return finalizeUndo(originalScan, {
+    loyaltyMode: 'points',
+    isRedemption: false,
+    pointsEarned: -Number(originalScan.pointsEarned || 0), // positive (restoring)
+    previousPointsBalance: originalScan.newPointsBalance,
+    newPointsBalance: revertedBalance,
+    redemptionNote: originalScan.redemptionNote
+      ? `Undo: ${originalScan.redemptionNote}`
+      : 'Undo redemption',
+  });
+}
+
 // ── Dispatcher ────────────────────────────────────────────────────────────────
 
 /**
  * Undo any scan — dispatches to the correct handler based on loyalty mode.
  */
 export async function undoScan(originalScan) {
+  if (originalScan.isRedemption) return undoRedemptionScan(originalScan);
   const mode = inferMode(originalScan);
   return mode === 'points'
     ? undoPointsScan(originalScan)
