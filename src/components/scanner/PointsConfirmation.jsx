@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Zap, Loader2 } from 'lucide-react';
+import { DollarSign, Zap, Loader2, Gift } from 'lucide-react';
 
 export default function PointsConfirmation({
   passIdentifier,
@@ -10,6 +10,7 @@ export default function PointsConfirmation({
   currentPoints,
   onConfirm,
   onCancel,
+  onSpendPoints,
   loading,
 }) {
   const [amount, setAmount] = useState('');

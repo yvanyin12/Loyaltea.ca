@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, AlertCircle, RotateCcw, Wifi, Zap } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, RotateCcw, Wifi, Zap, Gift, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 

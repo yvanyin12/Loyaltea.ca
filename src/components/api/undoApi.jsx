@@ -31,6 +31,9 @@ export const isUndoable = (scan) =>
 const inferMode = (scan) =>
   scan.loyaltyMode || (scan.pointsEarned != null ? 'points' : 'stamps');
 
+/** Check if a scan is a redemption */
+export const isRedemption = (scan) => !!scan.isRedemption;
+
 /** Mark original as undone and create the reversal log record. */
 const finalizeUndo = async (originalScan, reversalFields) => {
   await base44.entities.ScanLog.update(originalScan.id, { isUndone: true });
