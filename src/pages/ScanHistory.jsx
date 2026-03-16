@@ -61,6 +61,7 @@ export default function ScanHistory() {
       'Scan Result',
       'Amount Spent (CAD)', 'Points / Stamps Earned',
       'Previous Balance', 'New Balance',
+      'Type', 'Redemption Note',
     ];
     const rows = scans.map((s) => {
       const m = s.created_date ? moment.utc(s.created_date).tz('America/Toronto') : null;
@@ -81,6 +82,8 @@ export default function ScanHistory() {
         s.pointsEarned != null ? s.pointsEarned : '',
         s.previousPointsBalance != null ? s.previousPointsBalance : '',
         s.newPointsBalance != null ? s.newPointsBalance : '',
+        s.isRedemption ? 'redemption' : s.isReversal ? 'reversal' : 'earn',
+        s.redemptionNote || '',
       ];
     });
     const csv = [headers, ...rows]
