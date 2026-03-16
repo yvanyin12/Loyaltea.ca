@@ -781,7 +781,19 @@ export default function Scanner() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 gap-6">
-        {pointsFlow ? (
+        {redeemFlow ? (
+          <>
+            <RedeemPointsModal
+              passIdentifier={redeemFlow.passData?.identifier}
+              configName={redeemFlow.configName}
+              currentPoints={redeemFlow.currentPoints}
+              onConfirm={handleRedemptionConfirm}
+              onCancel={handleCancelScan}
+              loading={redeemLoading}
+            />
+            <DebugPanel logs={debugLogs} />
+          </>
+        ) : pointsFlow ? (
           <>
             <PointsConfirmation
               passIdentifier={pointsFlow.passData?.identifier}
@@ -790,6 +802,7 @@ export default function Scanner() {
               currentPoints={pointsFlow.currentPoints}
               onConfirm={handlePointsConfirm}
               onCancel={handleCancelScan}
+              onSpendPoints={handleOpenRedeem}
               loading={pointsLoading}
             />
             <DebugPanel logs={debugLogs} />
