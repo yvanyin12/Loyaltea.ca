@@ -34,7 +34,6 @@ export default function UserManagement() {
       await base44.users.inviteUser(email, 'admin');
       setInviteMsg({ type: 'success', text: `Invite sent to ${email}` });
       setInviteEmail('');
-      // Refresh user list
       const allUsers = await base44.entities.User.list();
       setUsers(allUsers);
     } catch (err) {
@@ -61,7 +60,6 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-4">
-      {/* Invite form */}
       <form onSubmit={handleInvite} className="flex gap-2">
         <Input
           type="email"
@@ -81,46 +79,46 @@ export default function UserManagement() {
         </p>
       )}
       <div className="space-y-3">
-      {users.map((user) => {
-        const isMe = user.id === me?.id;
-        const isAdmin = user.role === 'admin';
-        return (
-          <div key={user.id} className="flex items-center justify-between bg-slate-800/60 rounded-xl px-4 py-3 border border-slate-700/50">
-            <div className="min-w-0">
-              <p className="text-white text-sm font-medium truncate">{user.full_name || '—'}</p>
-              <p className="text-slate-400 text-xs truncate">{user.email}</p>
+        {users.map((user) => {
+          const isMe = user.id === me?.id;
+          const isAdmin = user.role === 'admin';
+          return (
+            <div key={user.id} className="flex items-center justify-between bg-slate-800/60 rounded-xl px-4 py-3 border border-slate-700/50">
+              <div className="min-w-0">
+                <p className="text-white text-sm font-medium truncate">{user.full_name || '—'}</p>
+                <p className="text-slate-400 text-xs truncate">{user.email}</p>
+              </div>
+              <div className="flex items-center gap-2 ml-3 shrink-0">
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  isAdmin ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'bg-slate-700/60 text-slate-400'
+                }`}>
+                  {isAdmin ? 'Admin' : 'User'}
+                </span>
+                {!isMe && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`gap-1.5 text-xs h-7 px-2 ${isAdmin ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20'}`}
+                    onClick={() => toggleAdmin(user)}
+                    disabled={updating === user.id}
+                  >
+                    {updating === user.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : isAdmin ? (
+                      <><ShieldOff className="w-3 h-3" /> Remove</>
+                    ) : (
+                      <><Shield className="w-3 h-3" /> Make Admin</>
+                    )}
+                  </Button>
+                )}
+                {isMe && <span className="text-xs text-slate-500 italic">you</span>}
+              </div>
             </div>
-            <div className="flex items-center gap-2 ml-3 shrink-0">
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                isAdmin ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'bg-slate-700/60 text-slate-400'
-              }`}>
-                {isAdmin ? 'Admin' : 'User'}
-              </span>
-              {!isMe && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className={`gap-1.5 text-xs h-7 px-2 ${isAdmin ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20'}`}
-                  onClick={() => toggleAdmin(user)}
-                  disabled={updating === user.id}
-                >
-                  {updating === user.id ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : isAdmin ? (
-                    <><ShieldOff className="w-3 h-3" /> Remove</>
-                  ) : (
-                    <><Shield className="w-3 h-3" /> Make Admin</>
-                  )}
-                </Button>
-              )}
-              {isMe && <span className="text-xs text-slate-500 italic">you</span>}
-            </div>
-          </div>
-        );
-      })}
-      {users.length === 0 && (
-        <p className="text-slate-500 text-sm text-center py-4">No users found.</p>
-      )}
+          );
+        })}
+        {users.length === 0 && (
+          <p className="text-slate-500 text-sm text-center py-4">No users found.</p>
+        )}
       </div>
     </div>
   );
