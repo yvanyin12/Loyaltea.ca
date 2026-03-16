@@ -60,7 +60,27 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Invite form */}
+      <form onSubmit={handleInvite} className="flex gap-2">
+        <Input
+          type="email"
+          placeholder="Email address"
+          value={inviteEmail}
+          onChange={(e) => setInviteEmail(e.target.value)}
+          className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 text-sm h-9"
+        />
+        <Button type="submit" size="sm" disabled={inviting || !inviteEmail.trim()} className="gap-1.5 shrink-0">
+          {inviting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+          Invite Admin
+        </Button>
+      </form>
+      {inviteMsg && (
+        <p className={`text-xs ${inviteMsg.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+          {inviteMsg.text}
+        </p>
+      )}
+      <div className="space-y-3">
       {users.map((user) => {
         const isMe = user.id === me?.id;
         const isAdmin = user.role === 'admin';
