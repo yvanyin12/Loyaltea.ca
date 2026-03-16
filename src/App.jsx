@@ -40,7 +40,6 @@ const AuthenticatedApp = () => {
   }
 
   // Block non-admin users
-  const { user } = useAuth();
   if (user && user.role !== 'admin') {
     return <AccessDenied />;
   }
