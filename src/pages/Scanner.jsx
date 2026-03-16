@@ -726,6 +726,7 @@ export default function Scanner() {
     setPendingScanId(null);
     setConfirmPending(null);
     setPointsFlow(null);
+    setRedeemFlow(null);
     setHolderInfo({ firstName: '', lastName: '', name: '', email: '', phone: '' });
     clearUndoTimer();
     setUndoState(null);
