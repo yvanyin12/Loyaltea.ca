@@ -75,14 +75,6 @@ export default function Settings() {
             onEdit={handleEditConfig}
           />
         </div>
-      </div>
-
-      <AddConfigSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        onAdd={handleAdd}
-        savedConfigs={configs}
-      />
 
         {/* ── User Management ── */}
         <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 space-y-4">
@@ -95,6 +87,13 @@ export default function Settings() {
           <UserManagement />
         </div>
       </div>
+
+      <AddConfigSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onAdd={handleAdd}
+        savedConfigs={configs}
+      />
 
       {editingConfig && (
         <ConfigEditor
