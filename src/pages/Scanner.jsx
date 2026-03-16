@@ -27,6 +27,7 @@ import {
   updateStoredValue,
 } from '../components/api/pointsApi';
 import PointsConfirmation from '../components/scanner/PointsConfirmation';
+import RedeemPointsModal from '../components/scanner/RedeemPointsModal';
 
 export default function Scanner() {
   const [mode, setMode] = useState('camera');
