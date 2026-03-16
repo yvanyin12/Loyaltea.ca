@@ -9,6 +9,9 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(null);
   const [me, setMe] = useState(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviting, setInviting] = useState(false);
+  const [inviteMsg, setInviteMsg] = useState(null);
 
   useEffect(() => {
     Promise.all([
