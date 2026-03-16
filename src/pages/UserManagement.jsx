@@ -121,6 +121,7 @@ export default function UserManagement() {
       {users.length === 0 && (
         <p className="text-slate-500 text-sm text-center py-4">No users found.</p>
       )}
+      </div>
     </div>
   );
 }
