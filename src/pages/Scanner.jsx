@@ -462,7 +462,81 @@ export default function Scanner() {
   const handleCancelScan = () => {
     setConfirmPending(null);
     setPointsFlow(null);
+    setRedeemFlow(null);
     setResult(null);
+  };
+
+  const handleOpenRedeem = () => {
+    if (!pointsFlow) return;
+    setRedeemFlow({
+      passData: pointsFlow.passData,
+      configId: pointsFlow.configId,
+      barcodeValue: pointsFlow.barcodeValue,
+      currentPoints: pointsFlow.currentPoints,
+      configName: pointsFlow.configName,
+    });
+    setPointsFlow(null);
+  };
+
+  const handleRedemptionConfirm = async ({ pointsToSpend, note, newBalance }) => {
+    if (!redeemFlow) return;
+    setRedeemLoading(true);
+
+    const { passData, configId, barcodeValue, currentPoints, configName } = redeemFlow;
+    const config = getSelectedConfig();
+
+    try {
+      // Update stored value in Passcreator (subtract points)
+      await updateStoredValue(passData?.identifier, newBalance);
+
+      // Save redemption log
+      const redemptionScan = await base44.entities.ScanLog.create({
+        barcodeValue,
+        passIdentifier: passData?.identifier || '',
+        appConfigurationId: configId,
+        appConfigurationName: configName,
+        scanResult: 'valid',
+        isVoided: false,
+        appScanSubmitted: false,
+        loyaltyMode: 'points',
+        isRedemption: true,
+        redemptionNote: note || '',
+        pointsEarned: -pointsToSpend,
+        previousPointsBalance: currentPoints,
+        newPointsBalance: newBalance,
+        isUndone: false,
+        isReversal: false,
+        holderFirstName: holderInfo.firstName,
+        holderLastName: holderInfo.lastName,
+        holderName: holderInfo.name,
+        holderEmail: holderInfo.email,
+        holderPhone: holderInfo.phone,
+      });
+
+      setResult({
+        status: 'valid',
+        barcodeValue,
+        passData,
+        error: '',
+        appScanSubmitted: false,
+        redemptionData: {
+          pointsSpent: pointsToSpend,
+          previousBalance: currentPoints,
+          newBalance,
+          note,
+        },
+      });
+
+      if (redemptionScan?.id) {
+        startUndoTimer(redemptionScan);
+      }
+
+      setRedeemFlow(null);
+    } catch (e) {
+      log('error', `Redemption failed: ${e.message}`);
+    }
+
+    setRedeemLoading(false);
   };
 
   const handlePointsConfirm = async (amountSpent) => {
