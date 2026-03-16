@@ -2,18 +2,13 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Gift, Minus, Loader2, ChevronLeft, AlertCircle } from 'lucide-react';
-
-const PRESET_REWARDS = [
-  { label: 'Free Drink', points: 100 },
-  { label: '$5 Off', points: 500 },
-  { label: '$10 Off', points: 1000 },
-  { label: '$25 Off', points: 2500 },
-];
+import { getRewards } from '@/lib/rewardsStore';
 
 // Step 1: Enter points to spend
 // Step 2: Confirm before submitting
 export default function RedeemPointsModal({ passIdentifier, configName, currentPoints, onConfirm, onCancel, loading }) {
   const [step, setStep] = useState('input'); // 'input' | 'confirm'
+  const presetRewards = getRewards();
   const [pointsToSpend, setPointsToSpend] = useState('');
   const [note, setNote] = useState('');
   const [selectedPreset, setSelectedPreset] = useState(null);
@@ -110,7 +105,7 @@ export default function RedeemPointsModal({ passIdentifier, configName, currentP
       <div className="space-y-2">
         <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Quick Rewards</p>
         <div className="grid grid-cols-2 gap-2">
-          {PRESET_REWARDS.map((preset) => (
+          {presetRewards.map((preset) => (
             <button
               key={preset.label}
               onClick={() => handlePresetClick(preset)}
