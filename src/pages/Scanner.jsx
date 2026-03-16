@@ -826,6 +826,13 @@ export default function Scanner() {
             {showAmountInput && result.status === 'valid' && (
               <AmountInput onSave={handleAmountSave} onSkip={handleAmountSkip} />
             )}
+            {undoState && !showAmountInput && (
+              <UndoTimer
+                onUndo={handleUndo}
+                onExpire={() => setUndoState(null)}
+              />
+            )}
+            <UndoBar show={false} loading={undoLoading} message={undoMessage} />
             <DebugPanel logs={debugLogs} />
           </>
         ) : processing ? (
