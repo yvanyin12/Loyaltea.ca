@@ -11,6 +11,7 @@ import DebugPanel from '../components/scanner/DebugPanel';
 import AmountInput from '../components/scanner/AmountInput';
 import ScanConfirmation from '../components/scanner/ScanConfirmation';
 import UndoBar from '../components/scanner/UndoBar';
+import UndoTimer from '../components/scanner/UndoTimer';
 import { undoScan } from '../components/api/undoApi';
 import {
   getProxyUrl,
