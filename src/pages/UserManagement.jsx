@@ -13,14 +13,19 @@ export default function UserManagement() {
   const [inviting, setInviting] = useState(false);
   const [inviteMsg, setInviteMsg] = useState(null);
 
+  const isOwner = me?.role === 'owner';
+
   useEffect(() => {
-    Promise.all([
-      base44.entities.User.list(),
-      base44.auth.me(),
-    ]).then(([allUsers, currentUser]) => {
-      setUsers(allUsers);
+    base44.auth.me().then((currentUser) => {
       setMe(currentUser);
-      setLoading(false);
+      if (currentUser?.role === 'owner') {
+        base44.entities.User.list().then((allUsers) => {
+          setUsers(allUsers);
+          setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
     });
   }, []);
 
@@ -58,6 +63,14 @@ export default function UserManagement() {
     );
   }
 
+  if (!isOwner) {
+    return (
+      <p className="text-slate-500 text-sm text-center py-4">
+        Only the Owner can manage users.
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <form onSubmit={handleInvite} className="flex gap-2">
@@ -79,7 +92,7 @@ export default function UserManagement() {
         </p>
       )}
       <div className="space-y-3">
-        {users.map((user) => {
+        {users.filter(u => u.role !== 'owner').map((user) => {
           const isMe = user.id === me?.id;
           const isAdmin = user.role === 'admin';
           return (
@@ -111,12 +124,11 @@ export default function UserManagement() {
                     )}
                   </Button>
                 )}
-                {isMe && <span className="text-xs text-slate-500 italic">you</span>}
               </div>
             </div>
           );
         })}
-        {users.length === 0 && (
+        {users.filter(u => u.role !== 'owner').length === 0 && (
           <p className="text-slate-500 text-sm text-center py-4">No users found.</p>
         )}
       </div>

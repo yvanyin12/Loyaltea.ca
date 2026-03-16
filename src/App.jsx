@@ -39,8 +39,8 @@ const AuthenticatedApp = () => {
     }
   }
 
-  // Block non-admin users
-  if (user && user.role !== 'admin') {
+  // Block users who are not owner or admin
+  if (user && user.role !== 'admin' && user.role !== 'owner') {
     return <AccessDenied />;
   }
 
