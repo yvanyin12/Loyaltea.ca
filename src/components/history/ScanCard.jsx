@@ -127,12 +127,16 @@ export default function ScanCard({ scan, onUndo }) {
                 >
                   {scan.pointsEarned >= 0 ? '+' : ''}
                   {scan.pointsEarned.toLocaleString()} pts
+                  {scan.isRedemption ? ' redeemed' : ' earned'}
                 </p>
               )}
-              {scan.newPointsBalance != null && (
-                <p className="text-emerald-400">
-                  Balance: {scan.newPointsBalance.toLocaleString()}
+              {scan.previousPointsBalance != null && scan.newPointsBalance != null && (
+                <p className="text-slate-500">
+                  {scan.previousPointsBalance.toLocaleString()} → <span className="text-emerald-400">{scan.newPointsBalance.toLocaleString()} pts</span>
                 </p>
+              )}
+              {scan.isRedemption && scan.redemptionNote && (
+                <p className="text-slate-400 italic">"{scan.redemptionNote}"</p>
               )}
             </div>
           )}
