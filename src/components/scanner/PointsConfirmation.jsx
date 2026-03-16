@@ -115,9 +115,21 @@ export default function PointsConfirmation({
           className="flex-1 gap-2"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-          {loading ? 'Updating...' : 'Confirm & Update'}
+          {loading ? 'Updating...' : 'Add Points'}
         </Button>
       </div>
+
+      {/* Spend Points */}
+      {onSpendPoints && (
+        <Button
+          variant="ghost"
+          onClick={onSpendPoints}
+          disabled={loading || currentPoints === 0}
+          className="w-full gap-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 border border-red-900/40 mt-1"
+        >
+          <Gift className="w-4 h-4" /> Spend / Redeem Points
+        </Button>
+      )}
     </div>
   );
 }
