@@ -45,6 +45,8 @@ export default function Scanner() {
 
   // Points mode state
   const [pointsFlow, setPointsFlow] = useState(null); // { passData, configId, barcodeValue, currentPoints, rewardPercent, configName }
+  const [redeemFlow, setRedeemFlow] = useState(null); // { passData, configId, barcodeValue, currentPoints, configName }
+  const [redeemLoading, setRedeemLoading] = useState(false);
   const [pointsLoading, setPointsLoading] = useState(false);
 
   // Holder info — extracted once from passData, shared across flow steps
