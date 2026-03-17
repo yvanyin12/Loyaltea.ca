@@ -435,7 +435,6 @@ export default function Scanner() {
       });
       if (created?.id) {
         setPendingScanId(created.id);
-        startUndoTimer(created);
         // Show result with stamp data
         setResult({
           status: 'valid',
@@ -620,8 +619,6 @@ export default function Scanner() {
         holderEmail: holderInfo.email,
         holderPhone: holderInfo.phone,
       });
-
-      if (pointsScan?.id) startUndoTimer(pointsScan);
 
       setResult({
         status: 'valid',
@@ -822,13 +819,6 @@ export default function Scanner() {
             {showAmountInput && result.status === 'valid' && (
               <AmountInput onSave={handleAmountSave} onSkip={handleAmountSkip} />
             )}
-            {undoState && !showAmountInput && !result?.redemptionData && (
-              <UndoTimer
-                onUndo={handleUndo}
-                onExpire={() => setUndoState(null)}
-              />
-            )}
-            <UndoBar show={false} loading={undoLoading} message={undoMessage} />
             <DebugPanel logs={debugLogs} />
           </>
         ) : processing ? (
