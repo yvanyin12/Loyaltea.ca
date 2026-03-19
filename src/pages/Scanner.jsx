@@ -446,17 +446,21 @@ export default function Scanner() {
       });
       if (created?.id) {
         setPendingScanId(created.id);
-        // Show result with stamp data
+        // Build result data based on loyalty type
+        const resultStampsData = pendingLoyaltyType === 'stamps'
+          ? { previousBalance: currentStamps, newBalance: newStamps, loyaltyType: 'stamps' }
+          : pendingLoyaltyType === 'prepaid'
+          ? { previousBalance: currentStamps, newBalance: Math.max(0, currentStamps - 1), loyaltyType: 'prepaid' }
+          : null;
         setResult({
           status: 'valid',
           barcodeValue,
           passData,
           error: '',
           appScanSubmitted,
-          stampsData: {
-            previousBalance: currentStamps,
-            newBalance: newStamps,
-          },
+          loyaltyType: pendingLoyaltyType,
+          stampsData: resultStampsData,
+          oneTimeRedeemed: pendingLoyaltyType === 'one_time',
         });
         // Show amount input for revenue tracking
         if (appScanSubmitted) {
