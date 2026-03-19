@@ -416,15 +416,6 @@ export default function Scanner() {
       } catch (e) {
         log('error', `FAILED to update stamp count: ${e.message}`);
       }
-    } else if (pendingLoyaltyType === 'one_time') {
-      // Mark pass as consumed by setting sentinel storedValue=99999
-      log('info', `--- STORED VALUE UPDATE (ONE_TIME) — marking consumed (99999) ---`);
-      try {
-        await updateStoredValue(passData?.identifier, 99999);
-        log('ok', `One-time pass marked consumed ✓`);
-      } catch (e) {
-        log('error', `FAILED to mark one-time pass as consumed: ${e.message}`);
-      }
     } else {
       log('info', `Skipping stored value update — Passcreator handles it for ${pendingLoyaltyType}`);
     }
