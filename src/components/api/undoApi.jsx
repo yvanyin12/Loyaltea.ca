@@ -171,6 +171,64 @@ export async function undoRedemptionScan(originalScan) {
   });
 }
 
+// ── Prepaid ───────────────────────────────────────────────────────────────────
+
+/**
+ * Undo a PREPAID scan.
+ * Passcreator decrements the balance automatically, so we need to add +1 back
+ * by setting storedValue to newPointsBalance + 1.
+ * Also deletes the app scan (best-effort).
+ */
+export async function undoPrepaidScan(originalScan) {
+  const previousBalance = Number(originalScan.previousPointsBalance ?? 0);
+  const revertedBalance = previousBalance; // restore to what it was before the scan
+
+  if (originalScan.passIdentifier) {
+    try {
+      await updateStoredValue(originalScan.passIdentifier, revertedBalance);
+    } catch (e) {
+      console.warn('[Undo Prepaid] Failed to revert balance:', e.message);
+    }
+  }
+
+  if (originalScan.appScanId) {
+    try {
+      await deleteAppScan(originalScan.appScanId);
+    } catch (e) {
+      console.warn('[Undo Prepaid] delete-scan failed (ignored):', e.message);
+    }
+  }
+
+  return finalizeUndo(originalScan, {
+    loyaltyMode: 'prepaid',
+    previousPointsBalance: originalScan.newPointsBalance,
+    newPointsBalance: revertedBalance,
+  });
+}
+
+// ── One-time ──────────────────────────────────────────────────────────────────
+
+/**
+ * Undo a ONE-TIME scan.
+ * Passcreator voids the pass automatically — we can only delete the app scan
+ * and create a reversal audit record. The pass itself cannot be un-voided here.
+ */
+export async function undoOneTimeScan(originalScan) {
+  if (originalScan.appScanId) {
+    try {
+      await deleteAppScan(originalScan.appScanId);
+    } catch (e) {
+      console.warn('[Undo One-Time] delete-scan failed (ignored):', e.message);
+    }
+  }
+
+  return finalizeUndo(originalScan, {
+    loyaltyMode: 'one_time',
+    previousPointsBalance: originalScan.previousPointsBalance,
+    newPointsBalance: originalScan.newPointsBalance,
+  });
+}
+
 // ── Dispatcher ────────────────────────────────────────────────────────────────
 
 /**
@@ -179,7 +237,8 @@ export async function undoRedemptionScan(originalScan) {
 export async function undoScan(originalScan) {
   if (originalScan.isRedemption) return undoRedemptionScan(originalScan);
   const mode = inferMode(originalScan);
-  return mode === 'points'
-    ? undoPointsScan(originalScan)
-    : undoStampsScan(originalScan);
+  if (mode === 'points') return undoPointsScan(originalScan);
+  if (mode === 'prepaid') return undoPrepaidScan(originalScan);
+  if (mode === 'one_time') return undoOneTimeScan(originalScan);
+  return undoStampsScan(originalScan);
 }
