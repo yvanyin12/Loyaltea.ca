@@ -351,6 +351,17 @@ export default function Scanner() {
         const currentStamps = getCurrentStoredValue(passData);
         log('info', `currentStamps/balance: ${currentStamps}, scanMode: ${scanMode}`);
 
+        // One-time: block if already redeemed (sentinel value 99999 means consumed)
+        if (configLoyaltyType === 'one_time') {
+          log('info', `ONE_TIME check — storedValue: ${currentStamps}`);
+          if (currentStamps === 99999) {
+            log('warn', `ONE_TIME pass already consumed (storedValue=99999) — blocking`);
+            setResult({ status: 'already_voided', barcodeValue, passData, error: '', appScanSubmitted: false });
+            setProcessing(false);
+            return;
+          }
+        }
+
         setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult, currentStamps, loyaltyType: configLoyaltyType });
       } else {
         log('info', `branch taken: POINTS_FLOW → opening Points Loyalty screen`);
@@ -378,8 +389,7 @@ export default function Scanner() {
     log('info', `[CONFIRMED] Submitting scan to Passcreator...`);
     log('info', `previousStamps: ${currentStamps}, newStamps: ${newStamps}`);
 
-    // one_time: scanStatus=0 tells Passcreator to void the pass — blocking all future scans at /validate
-    const resolvedScanStatus = pendingLoyaltyType === 'one_time' ? 0 : 2;
+    const resolvedScanStatus = scanMode === 0 ? 0 : 2; // 0 = void, 2 = attendance
     const trackPayload = {
       appConfigurationId: configId,
       passId: passData?.identifier || '',
@@ -415,6 +425,15 @@ export default function Scanner() {
         log('ok', `Stamp count updated to ${newStamps} ✓`);
       } catch (e) {
         log('error', `FAILED to update stamp count: ${e.message}`);
+      }
+    } else if (pendingLoyaltyType === 'one_time') {
+      // Mark pass as consumed by setting sentinel storedValue=99999
+      log('info', `--- STORED VALUE UPDATE (ONE_TIME) — marking consumed (99999) ---`);
+      try {
+        await updateStoredValue(passData?.identifier, 99999);
+        log('ok', `One-time pass marked consumed ✓`);
+      } catch (e) {
+        log('error', `FAILED to mark one-time pass as consumed: ${e.message}`);
       }
     } else {
       log('info', `Skipping stored value update — Passcreator handles it for ${pendingLoyaltyType}`);

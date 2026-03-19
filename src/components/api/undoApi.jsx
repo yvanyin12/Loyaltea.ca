@@ -210,10 +210,20 @@ export async function undoPrepaidScan(originalScan) {
 
 /**
  * Undo a ONE-TIME scan.
- * Deletes the app scan record — this un-voids the pass in Passcreator
- * (Passcreator voids on scan creation; deleting the scan reverts the void).
+ * Restores storedValue from 99999 (consumed sentinel) back to 0,
+ * re-enabling the pass for future scans.
+ * Also deletes the app scan record (best-effort).
  */
 export async function undoOneTimeScan(originalScan) {
+  // Restore storedValue to 0 — clears the consumed sentinel
+  if (originalScan.passIdentifier) {
+    try {
+      await updateStoredValue(originalScan.passIdentifier, 0);
+    } catch (e) {
+      console.warn('[Undo One-Time] Failed to restore storedValue:', e.message);
+    }
+  }
+
   if (originalScan.appScanId) {
     try {
       await deleteAppScan(originalScan.appScanId);
@@ -224,8 +234,8 @@ export async function undoOneTimeScan(originalScan) {
 
   return finalizeUndo(originalScan, {
     loyaltyMode: 'one_time',
-    previousPointsBalance: originalScan.previousPointsBalance,
-    newPointsBalance: originalScan.previousPointsBalance,
+    previousPointsBalance: 99999,
+    newPointsBalance: 0,
   });
 }
 
