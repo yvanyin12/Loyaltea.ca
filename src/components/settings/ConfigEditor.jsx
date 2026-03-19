@@ -8,6 +8,8 @@ function inferLoyaltyType(config) {
   if (config.loyaltyType) return config.loyaltyType.toLowerCase();
   const name = (config.name || '').toLowerCase();
   if (name.includes('stamp')) return 'stamps';
+  if (name.includes('one-time') || name.includes('one time') || name.includes('onetime') || name.includes('single')) return 'one_time';
+  if (name.includes('prepaid')) return 'prepaid';
   if (name.includes('point') || name.includes('loyalty')) return 'points';
   return 'points';
 }
