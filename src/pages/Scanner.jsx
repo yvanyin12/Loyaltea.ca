@@ -347,10 +347,21 @@ export default function Scanner() {
 
       if (configLoyaltyType === 'stamps' || configLoyaltyType === 'one_time' || configLoyaltyType === 'prepaid') {
         log('info', `branch taken: ${configLoyaltyType.toUpperCase()}_FLOW → attendance scan`);
-        // one_time: use scanMode 0 (void) so Passcreator voids the pass after first use
-        const scanMode = configLoyaltyType === 'one_time' ? 0 : (config?.scanMode ?? 1);
+        const scanMode = config?.scanMode ?? 1;
         const currentStamps = getCurrentStoredValue(passData);
         log('info', `currentStamps/balance: ${currentStamps}, scanMode: ${scanMode}`);
+
+        // One-time: block if already redeemed (sentinel value 99999 means consumed)
+        if (configLoyaltyType === 'one_time') {
+          log('info', `ONE_TIME check — storedValue: ${currentStamps}`);
+          if (currentStamps === 99999) {
+            log('warn', `ONE_TIME pass already consumed (storedValue=99999) — blocking`);
+            setResult({ status: 'already_voided', barcodeValue, passData, error: '', appScanSubmitted: false });
+            setProcessing(false);
+            return;
+          }
+        }
+
         setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult, currentStamps, loyaltyType: configLoyaltyType });
       } else {
         log('info', `branch taken: POINTS_FLOW → opening Points Loyalty screen`);
