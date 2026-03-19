@@ -145,11 +145,7 @@ export default function ScanCard({ scan, onUndo }) {
           {scan.loyaltyMode === 'stamps' && (
             <div className="text-xs mt-1 space-y-0.5">
               {scan.newPointsBalance != null && scan.previousPointsBalance != null && (
-                <p
-                  className={`font-semibold ${
-                    scan.newPointsBalance < scan.previousPointsBalance ? 'text-red-400' : 'text-blue-400'
-                  }`}
-                >
+                <p className={`font-semibold ${scan.newPointsBalance >= scan.previousPointsBalance ? 'text-blue-400' : 'text-red-400'}`}>
                   {scan.newPointsBalance >= scan.previousPointsBalance ? '+' : ''}
                   {scan.newPointsBalance - scan.previousPointsBalance} stamp
                 </p>
@@ -158,6 +154,31 @@ export default function ScanCard({ scan, onUndo }) {
                 <p className="text-emerald-400">
                   Balance: {scan.newPointsBalance} stamp{scan.newPointsBalance !== 1 ? 's' : ''}
                 </p>
+              )}
+            </div>
+          )}
+
+          {/* Prepaid */}
+          {scan.loyaltyMode === 'prepaid' && (
+            <div className="text-xs mt-1 space-y-0.5">
+              {scan.isReversal ? (
+                <p className="font-semibold text-emerald-400">+1 restored</p>
+              ) : (
+                <p className="font-semibold text-amber-400">−1 deducted</p>
+              )}
+              {scan.newPointsBalance != null && (
+                <p className="text-slate-400">Remaining: {scan.newPointsBalance}</p>
+              )}
+            </div>
+          )}
+
+          {/* One-time */}
+          {scan.loyaltyMode === 'one_time' && (
+            <div className="text-xs mt-1 space-y-0.5">
+              {scan.isReversal ? (
+                <p className="font-semibold text-emerald-400">Pass reactivated</p>
+              ) : (
+                <p className="font-semibold text-purple-400">Pass redeemed</p>
               )}
             </div>
           )}
