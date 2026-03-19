@@ -434,7 +434,7 @@ export default function Scanner() {
         errorMessage: errorMsg,
         loyaltyMode: pendingLoyaltyType || 'stamps',
         previousPointsBalance: currentStamps,
-        newPointsBalance: isStampsMode ? newStamps : currentStamps,
+        newPointsBalance: isStampsMode ? newStamps : (pendingLoyaltyType === 'prepaid' ? Math.max(0, currentStamps - 1) : currentStamps),
         isUndone: false,
         isReversal: false,
         holderFirstName: holderInfo.firstName,
