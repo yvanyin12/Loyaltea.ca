@@ -1,7 +1,20 @@
 import { Check, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function ScanConfirmation({ passData, configName, currentStamps, onConfirm, onCancel, loading }) {
+export default function ScanConfirmation({ passData, configName, currentStamps, loyaltyType, onConfirm, onCancel, loading }) {
+  const isOneTime = loyaltyType === 'one_time';
+  const isPrepaid = loyaltyType === 'prepaid';
+
+  const balanceLabel = isPrepaid ? 'Remaining Balance' : 'Current Stamps';
+  const actionLabel = isPrepaid
+    ? '-1 will be deducted'
+    : isOneTime
+    ? 'Pass will be redeemed (one-time use)'
+    : '+1 stamp will be added';
+  const actionColor = isPrepaid ? 'text-amber-400' : isOneTime ? 'text-purple-400' : 'text-blue-400';
+  const borderColor = isPrepaid ? 'border-amber-800/50' : isOneTime ? 'border-purple-800/50' : 'border-blue-800/50';
+  const bgColor = isPrepaid ? 'bg-amber-950/30' : isOneTime ? 'bg-purple-950/30' : 'bg-blue-950/30';
+
   return (
     <div className="w-full max-w-sm rounded-xl bg-slate-800/80 border border-slate-700 p-5 space-y-4">
       <div className="space-y-3">
@@ -28,11 +41,16 @@ export default function ScanConfirmation({ passData, configName, currentStamps, 
             </div>
           ) : null}
 
-          {typeof currentStamps === 'number' && (
-            <div className="bg-blue-950/30 border border-blue-800/50 rounded-lg p-3 mt-2">
-              <p className="text-slate-400 text-xs mb-1">Current Stamps</p>
+          {isOneTime ? (
+            <div className={`${bgColor} border ${borderColor} rounded-lg p-3 mt-2`}>
+              <p className={`${actionColor} text-sm font-medium`}>⚡ One-time pass — will be redeemed</p>
+              <p className="text-slate-400 text-xs mt-1">This pass cannot be used again after scanning.</p>
+            </div>
+          ) : typeof currentStamps === 'number' && (
+            <div className={`${bgColor} border ${borderColor} rounded-lg p-3 mt-2`}>
+              <p className="text-slate-400 text-xs mb-1">{balanceLabel}</p>
               <p className="text-white text-2xl font-bold">{currentStamps}</p>
-              <p className="text-blue-400 text-xs mt-1">+1 stamp will be added</p>
+              <p className={`${actionColor} text-xs mt-1`}>{actionLabel}</p>
             </div>
           )}
         </div>
