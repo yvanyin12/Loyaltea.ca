@@ -24,6 +24,9 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
   const [saved, setSaved] = useState(false);
   const [validationError, setValidationError] = useState('');
   const isStamps = loyaltyType === 'stamps';
+  const isOneTime = loyaltyType === 'one_time';
+  const isPrepaid = loyaltyType === 'prepaid';
+  const isSimple = isStamps || isOneTime || isPrepaid; // no reward% needed
 
   const presets = [
     { label: '5%', value: 0.05 },
