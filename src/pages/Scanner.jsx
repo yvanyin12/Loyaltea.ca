@@ -817,6 +817,7 @@ export default function Scanner() {
               passData={confirmPending.passData}
               configName={confirmPending.configName}
               currentStamps={confirmPending.currentStamps}
+              loyaltyType={confirmPending.loyaltyType}
               onConfirm={handleConfirmScan}
               onCancel={handleCancelScan}
               loading={confirmLoading}
