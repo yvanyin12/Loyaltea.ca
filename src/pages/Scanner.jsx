@@ -347,9 +347,10 @@ export default function Scanner() {
 
       if (configLoyaltyType === 'stamps' || configLoyaltyType === 'one_time' || configLoyaltyType === 'prepaid') {
         log('info', `branch taken: ${configLoyaltyType.toUpperCase()}_FLOW → attendance scan`);
-        const scanMode = config?.scanMode ?? 1;
+        // one_time: use scanMode 0 (void) so Passcreator voids the pass after first use
+        const scanMode = configLoyaltyType === 'one_time' ? 0 : (config?.scanMode ?? 1);
         const currentStamps = getCurrentStoredValue(passData);
-        log('info', `currentStamps/balance: ${currentStamps}`);
+        log('info', `currentStamps/balance: ${currentStamps}, scanMode: ${scanMode}`);
         setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult, currentStamps, loyaltyType: configLoyaltyType });
       } else {
         log('info', `branch taken: POINTS_FLOW → opening Points Loyalty screen`);
