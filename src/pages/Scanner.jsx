@@ -369,8 +369,9 @@ export default function Scanner() {
     if (!confirmPending) return;
     setConfirmLoading(true);
 
-    const { passData, configId, barcodeValue, scanMode, currentStamps } = confirmPending;
+    const { passData, configId, barcodeValue, scanMode, currentStamps, loyaltyType: pendingLoyaltyType } = confirmPending;
     const config = getSelectedConfig();
+    const isStampsMode = pendingLoyaltyType === 'stamps';
     const newStamps = currentStamps + 1;
 
     log('info', `[CONFIRMED] Submitting scan to Passcreator...`);
