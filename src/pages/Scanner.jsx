@@ -404,14 +404,19 @@ export default function Scanner() {
       errorMsg = e.message;
     }
 
-    // Update stored value (stamp count) in Passcreator
-    log('info', `--- STORED VALUE UPDATE (STAMPS) ---`);
-    log('info', `Updating stamp count from ${currentStamps} to ${newStamps}`);
-    try {
-      await updateStoredValue(passData?.identifier, newStamps);
-      log('ok', `Stamp count updated to ${newStamps} ✓`);
-    } catch (e) {
-      log('error', `FAILED to update stamp count: ${e.message}`);
+    // Update stored value (stamp count) in Passcreator — only for stamps mode
+    // one_time and prepaid: Passcreator handles the value automatically via app scan
+    if (isStampsMode) {
+      log('info', `--- STORED VALUE UPDATE (STAMPS) ---`);
+      log('info', `Updating stamp count from ${currentStamps} to ${newStamps}`);
+      try {
+        await updateStoredValue(passData?.identifier, newStamps);
+        log('ok', `Stamp count updated to ${newStamps} ✓`);
+      } catch (e) {
+        log('error', `FAILED to update stamp count: ${e.message}`);
+      }
+    } else {
+      log('info', `Skipping stored value update — Passcreator handles it for ${pendingLoyaltyType}`);
     }
 
     // Save to database
