@@ -326,7 +326,7 @@ export default function Scanner() {
       log('info', `resolved loyaltyType: "${configLoyaltyType}"`);
       log('info', `config.passTemplateId: "${config?.passTemplateId ?? '(not set)'}"`);
       log('info', `config.rewardPercent: ${config?.rewardPercent ?? '(not set)'}`);
-      log('info', `final decision: ${configLoyaltyType === 'stamps' ? 'VALID_STAMPS' : 'VALID_POINTS'}`);
+      log('info', `final decision: VALID_${configLoyaltyType.toUpperCase()}`);
 
       // Guard: points config must have a valid rewardPercent saved before scanning
       if (configLoyaltyType === 'points') {
