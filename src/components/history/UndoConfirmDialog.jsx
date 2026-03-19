@@ -6,6 +6,10 @@ export default function UndoConfirmDialog({ scan, onConfirm, onCancel, loading }
 
   const mode = scan.loyaltyMode || (scan.pointsEarned != null ? 'points' : 'stamps');
   const isPoints = mode === 'points';
+  const isPrepaid = mode === 'prepaid';
+  const isOneTime = mode === 'one_time';
+
+  const modeLabel = { points: 'Points', stamps: 'Stamps', prepaid: 'Prepaid', one_time: 'One-time' }[mode] || mode;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 pb-24">
@@ -18,7 +22,7 @@ export default function UndoConfirmDialog({ scan, onConfirm, onCancel, loading }
           <div>
             <h3 className="text-white font-semibold">Undo Transaction?</h3>
             <p className="text-slate-400 text-xs mt-0.5">
-              This will reverse the loyalty transaction.
+              {isOneTime ? 'This will reactivate the pass so it can be used again.' : 'This will reverse the loyalty transaction.'}
             </p>
           </div>
         </div>
@@ -32,7 +36,7 @@ export default function UndoConfirmDialog({ scan, onConfirm, onCancel, loading }
           )}
           <div className="flex justify-between">
             <span className="text-slate-400">Loyalty mode</span>
-            <span className="text-white capitalize">{mode}</span>
+            <span className="text-white">{modeLabel}</span>
           </div>
           {scan.amountSpent != null && scan.amountSpent > 0 && (
             <div className="flex justify-between">
@@ -56,7 +60,25 @@ export default function UndoConfirmDialog({ scan, onConfirm, onCancel, loading }
               </span>
             </div>
           )}
-          {!isPoints && (
+          {isPrepaid && (
+            <div className="flex justify-between">
+              <span className="text-slate-400">Action</span>
+              <span className="text-amber-400">+1 added back to balance</span>
+            </div>
+          )}
+          {isPrepaid && scan.previousPointsBalance != null && (
+            <div className="flex justify-between">
+              <span className="text-slate-400">Balance will revert to</span>
+              <span className="text-amber-400 font-semibold">{scan.previousPointsBalance}</span>
+            </div>
+          )}
+          {isOneTime && (
+            <div className="flex justify-between">
+              <span className="text-slate-400">Action</span>
+              <span className="text-amber-400">Reactivate pass</span>
+            </div>
+          )}
+          {!isPoints && !isPrepaid && !isOneTime && (
             <div className="flex justify-between">
               <span className="text-slate-400">Action</span>
               <span className="text-amber-400">Remove 1 stamp</span>
