@@ -210,8 +210,7 @@ export async function undoPrepaidScan(originalScan) {
 
 /**
  * Undo a ONE-TIME scan.
- * Restores storedValue from 99999 (consumed sentinel) back to 0,
- * re-enabling the pass for future scans.
+ * Restores storedValue from 0 (disabled) back to 1, re-enabling the pass.
  * Also deletes the app scan record (best-effort).
  */
 export async function undoOneTimeScan(originalScan) {
