@@ -69,14 +69,17 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
           <Label className="text-slate-300 text-sm font-medium">Loyalty Type</Label>
           <p className="text-slate-500 text-xs">This configuration's loyalty type is fixed.</p>
           <div className={`w-full py-2 rounded-lg text-sm font-semibold text-center ${
-            isStamps ? 'bg-amber-600/20 text-amber-400 border border-amber-600/40' : 'bg-blue-600/20 text-blue-400 border border-blue-600/40'
+            isStamps ? 'bg-amber-600/20 text-amber-400 border border-amber-600/40'
+            : isOneTime ? 'bg-purple-600/20 text-purple-400 border border-purple-600/40'
+            : isPrepaid ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/40'
+            : 'bg-blue-600/20 text-blue-400 border border-blue-600/40'
           }`}>
-            {isStamps ? 'Stamps' : 'Points'}
+            {isStamps ? 'Stamps' : isOneTime ? 'One-Time Use' : isPrepaid ? 'Prepaid' : 'Points'}
           </div>
         </div>
 
         {/* Reward % — only shown for points */}
-        {!isStamps && (
+        {!isSimple && (
           <div className="space-y-3 border-t border-slate-800 pt-4">
             <div>
               <Label className="text-slate-300 text-sm font-medium">
