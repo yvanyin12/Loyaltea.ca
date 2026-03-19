@@ -421,7 +421,7 @@ export default function Scanner() {
 
     // Save to database
     try {
-      log('info', `[STAMPS] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
+      log('info', `[${pendingLoyaltyType}] Saving ScanLog — holder: firstName="${holderInfo.firstName}" lastName="${holderInfo.lastName}" email="${holderInfo.email}" phone="${holderInfo.phone}"`);
       const created = await base44.entities.ScanLog.create({
         barcodeValue,
         passIdentifier: passData?.identifier || '',
@@ -432,9 +432,9 @@ export default function Scanner() {
         appScanSubmitted,
         appScanId: appScanId || '',
         errorMessage: errorMsg,
-        loyaltyMode: 'stamps',
+        loyaltyMode: pendingLoyaltyType || 'stamps',
         previousPointsBalance: currentStamps,
-        newPointsBalance: newStamps,
+        newPointsBalance: isStampsMode ? newStamps : currentStamps,
         isUndone: false,
         isReversal: false,
         holderFirstName: holderInfo.firstName,
