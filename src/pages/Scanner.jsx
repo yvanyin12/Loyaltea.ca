@@ -416,13 +416,13 @@ export default function Scanner() {
         log('error', `FAILED to update stamp count: ${e.message}`);
       }
     } else if (pendingLoyaltyType === 'one_time') {
-      // Mark pass as consumed by setting sentinel storedValue=99999
-      log('info', `--- STORED VALUE UPDATE (ONE_TIME) — marking consumed (99999) ---`);
+      // Set storedValue=0 — same as prepaid at 0 — triggers Passcreator to blur/disable the pass
+      log('info', `--- STORED VALUE UPDATE (ONE_TIME) — setting to 0 to disable pass ---`);
       try {
-        await updateStoredValue(passData?.identifier, 99999);
-        log('ok', `One-time pass marked consumed ✓`);
+        await updateStoredValue(passData?.identifier, 0);
+        log('ok', `One-time pass disabled (storedValue=0) ✓`);
       } catch (e) {
-        log('error', `FAILED to mark one-time pass as consumed: ${e.message}`);
+        log('error', `FAILED to disable one-time pass: ${e.message}`);
       }
     } else {
       log('info', `Skipping stored value update — Passcreator handles it for ${pendingLoyaltyType}`);
