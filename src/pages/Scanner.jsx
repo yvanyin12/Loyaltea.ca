@@ -345,12 +345,12 @@ export default function Scanner() {
         }
       }
 
-      if (configLoyaltyType === 'stamps') {
-        log('info', `branch taken: STAMPS_FLOW → adding 1 stamp via attendance scan`);
+      if (configLoyaltyType === 'stamps' || configLoyaltyType === 'one_time' || configLoyaltyType === 'prepaid') {
+        log('info', `branch taken: ${configLoyaltyType.toUpperCase()}_FLOW → attendance scan`);
         const scanMode = config?.scanMode ?? 1;
         const currentStamps = getCurrentStoredValue(passData);
-        log('info', `currentStamps: ${currentStamps}`);
-        setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult, currentStamps });
+        log('info', `currentStamps/balance: ${currentStamps}`);
+        setConfirmPending({ passData, configName: config?.name || '', scanMode, barcodeValue, configId, scanResult, currentStamps, loyaltyType: configLoyaltyType });
       } else {
         log('info', `branch taken: POINTS_FLOW → opening Points Loyalty screen`);
         const currentPoints = getCurrentStoredValue(passData);
