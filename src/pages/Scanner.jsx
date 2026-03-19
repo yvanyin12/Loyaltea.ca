@@ -310,6 +310,10 @@ export default function Scanner() {
         configLoyaltyType = configSavedType;
       } else if (configNameLower.includes('stamp')) {
         configLoyaltyType = 'stamps';
+      } else if (configNameLower.includes('one-time') || configNameLower.includes('one time') || configNameLower.includes('onetime') || configNameLower.includes('single')) {
+        configLoyaltyType = 'one_time';
+      } else if (configNameLower.includes('prepaid')) {
+        configLoyaltyType = 'prepaid';
       } else if (configNameLower.includes('point') || configNameLower.includes('loyalty')) {
         configLoyaltyType = 'points';
       } else {
