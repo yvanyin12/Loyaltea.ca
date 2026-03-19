@@ -378,7 +378,8 @@ export default function Scanner() {
     log('info', `[CONFIRMED] Submitting scan to Passcreator...`);
     log('info', `previousStamps: ${currentStamps}, newStamps: ${newStamps}`);
 
-    const resolvedScanStatus = scanMode === 0 ? 0 : 2; // 0 = void, 2 = attendance
+    // one_time: scanStatus=0 tells Passcreator to void the pass — blocking all future scans at /validate
+    const resolvedScanStatus = pendingLoyaltyType === 'one_time' ? 0 : 2;
     const trackPayload = {
       appConfigurationId: configId,
       passId: passData?.identifier || '',
