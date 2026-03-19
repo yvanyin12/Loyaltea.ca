@@ -130,7 +130,32 @@ export default function ScanResult({ result, onReset }) {
         </div>
       )}
 
-      {result.stampsData && (
+      {result.oneTimeRedeemed && (
+        <div className="bg-purple-950/50 border border-purple-800 rounded-xl p-4 text-center space-y-1">
+          <Zap className="w-8 h-8 text-purple-400 mx-auto" />
+          <p className="text-purple-300 font-bold text-sm uppercase tracking-wide">Pass Redeemed</p>
+          <p className="text-slate-400 text-xs">This one-time pass has been consumed and is now void.</p>
+        </div>
+      )}
+
+      {result.stampsData && result.stampsData.loyaltyType === 'prepaid' && (
+        <div className="bg-amber-950/50 border border-amber-800 rounded-xl p-4 space-y-2 text-left">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-300">Previous Balance</span>
+            <span className="text-white font-mono font-semibold text-lg">{result.stampsData.previousBalance}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm border-t border-amber-800 pt-2">
+            <span className="text-amber-300 font-semibold flex items-center gap-1"><Minus className="w-4 h-4" /> Deducted</span>
+            <span className="text-amber-300 font-mono font-semibold text-lg">−1</span>
+          </div>
+          <div className="flex items-center justify-between text-sm border-t border-amber-800 pt-2">
+            <span className="text-emerald-300 font-semibold">Remaining Balance</span>
+            <span className="text-emerald-300 font-mono font-semibold text-lg">{result.stampsData.newBalance}</span>
+          </div>
+        </div>
+      )}
+
+      {result.stampsData && result.stampsData.loyaltyType === 'stamps' && (
         <div className="bg-purple-950/50 border border-purple-800 rounded-xl p-4 space-y-2 text-left">
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-300">Previous Stamps</span>
