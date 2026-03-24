@@ -11,13 +11,25 @@ function inferLoyaltyType(config) {
   if (name.includes('one-time') || name.includes('one time') || name.includes('onetime') || name.includes('single')) return 'one_time';
   if (name.includes('prepaid')) return 'prepaid';
   if (name.includes('point') || name.includes('loyalty')) return 'points';
-  return 'points';
+  return null; // unknown — user must select
 }
 
+const LOYALTY_TYPES = [
+  { value: 'stamps', label: 'Stamps', color: 'amber' },
+  { value: 'points', label: 'Points', color: 'blue' },
+  { value: 'prepaid', label: 'Prepaid', color: 'emerald' },
+  { value: 'one_time', label: 'One-Time Use', color: 'purple' },
+];
+
+const TYPE_STYLES = {
+  stamps: 'bg-amber-600/20 text-amber-400 border-amber-600/40',
+  one_time: 'bg-purple-600/20 text-purple-400 border-purple-600/40',
+  prepaid: 'bg-emerald-600/20 text-emerald-400 border-emerald-600/40',
+  points: 'bg-blue-600/20 text-blue-400 border-blue-600/40',
+};
+
 export default function ConfigEditor({ config, onUpdate, onClose }) {
-  // Loyalty type is locked — determined once from saved config or name inference
-  const loyaltyType = inferLoyaltyType(config);
-  // null = nothing selected yet (forces user to pick for points mode)
+  const [loyaltyType, setLoyaltyType] = useState(inferLoyaltyType(config));
   const [rewardPercent, setRewardPercent] = useState(
     config.rewardPercent != null ? config.rewardPercent : null
   );
@@ -36,6 +48,10 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
   ];
 
   const handleSave = () => {
+    if (!loyaltyType) {
+      setValidationError('Please select a loyalty type before saving.');
+      return;
+    }
     if (!isSimple) {
       const parsed = parseFloat(rewardPercent);
       if (rewardPercent === null || rewardPercent === '' || isNaN(parsed) || parsed <= 0) {
@@ -64,17 +80,24 @@ export default function ConfigEditor({ config, onUpdate, onClose }) {
           <p className="text-slate-400 text-xs mt-1 font-mono">{config.configurationId}</p>
         </div>
 
-        {/* Loyalty Type — locked, not editable */}
+        {/* Loyalty Type — explicitly selectable */}
         <div className="space-y-2 border-t border-slate-800 pt-4">
-          <Label className="text-slate-300 text-sm font-medium">Loyalty Type</Label>
-          <p className="text-slate-500 text-xs">This configuration's loyalty type is fixed.</p>
-          <div className={`w-full py-2 rounded-lg text-sm font-semibold text-center ${
-            isStamps ? 'bg-amber-600/20 text-amber-400 border border-amber-600/40'
-            : isOneTime ? 'bg-purple-600/20 text-purple-400 border border-purple-600/40'
-            : isPrepaid ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/40'
-            : 'bg-blue-600/20 text-blue-400 border border-blue-600/40'
-          }`}>
-            {isStamps ? 'Stamps' : isOneTime ? 'One-Time Use' : isPrepaid ? 'Prepaid' : 'Points'}
+          <Label className="text-slate-300 text-sm font-medium">Loyalty Type <span className="text-red-400">*</span></Label>
+          <p className="text-slate-500 text-xs">Select the correct loyalty system for this configuration.</p>
+          <div className="grid grid-cols-2 gap-2">
+            {LOYALTY_TYPES.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => setLoyaltyType(t.value)}
+                className={`py-2 rounded-lg text-sm font-semibold border transition-all ${
+                  loyaltyType === t.value
+                    ? TYPE_STYLES[t.value]
+                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
         </div>
 
