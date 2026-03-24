@@ -317,7 +317,7 @@ export default function Scanner() {
       } else if (configNameLower.includes('point') || configNameLower.includes('loyalty')) {
         configLoyaltyType = 'points';
       } else {
-        configLoyaltyType = 'points'; // default to points when ambiguous
+        configLoyaltyType = null; // ambiguous — requires explicit type in Settings
       }
 
       log('info', `--- LOYALTY TYPE DECISION ---`);
@@ -326,7 +326,21 @@ export default function Scanner() {
       log('info', `resolved loyaltyType: "${configLoyaltyType}"`);
       log('info', `config.passTemplateId: "${config?.passTemplateId ?? '(not set)'}"`);
       log('info', `config.rewardPercent: ${config?.rewardPercent ?? '(not set)'}`);
-      log('info', `final decision: VALID_${configLoyaltyType.toUpperCase()}`);
+      log('info', `final decision: ${configLoyaltyType ? 'VALID_' + configLoyaltyType.toUpperCase() : 'UNKNOWN_TYPE'}`);
+
+      // Guard: loyalty type must be explicitly set in Settings
+      if (!configLoyaltyType) {
+        log('error', `REJECTED: loyalty type not configured for "${config.name}" — set it in Settings`);
+        setResult({
+          status: 'error',
+          barcodeValue,
+          passData,
+          error: `Loyalty type not set for "${config.name}". Please open Settings, edit this configuration, and select the correct loyalty type (Stamps, Points, Prepaid, or One-Time).`,
+          appScanSubmitted: false,
+        });
+        setProcessing(false);
+        return;
+      }
 
       // Guard: points config must have a valid rewardPercent saved before scanning
       if (configLoyaltyType === 'points') {
